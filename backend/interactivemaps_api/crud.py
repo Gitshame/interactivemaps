@@ -23,6 +23,8 @@ def update_map(db: Session, map_id: int, map: schemas.MapCreate) -> models.Inter
     current_map.description = map.description or current_map.description
     current_map.game = map.game or current_map.game
     current_map.image = map.image or current_map.image
+    current_map.x_dimension = map.x_dimension or current_map.x_dimension
+    current_map.y_dimension = map.y_dimension or current_map.y_dimension
 
     db.commit()
     db.refresh(current_map)

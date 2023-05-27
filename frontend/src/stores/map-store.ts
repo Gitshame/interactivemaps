@@ -4,10 +4,10 @@ import { computed, ref } from "vue";
 
 export const useInteractiveMapStore = defineStore('interactive-maps', {
   state: () => ({
-    maps: []
+    maps: [],
+    loading: true
   }),
   getters: {
-    doubleCount: (state) => state.counter * 2,
   },
   actions: {
     loadMaps(mapsList: []) {
@@ -22,11 +22,13 @@ export const useInteractiveMapStore = defineStore('interactive-maps', {
         () =>
           [
             [0, 0],
-            [map.x_dimension, map.y_dimension],
+            [map.y_dimension, map.x_dimension],
           ] as L.LatLngBoundsLiteral
       );
 
-      return bounds;
+      console.log(bounds.value)
+
+      return bounds.value;
     }
   },
 });
