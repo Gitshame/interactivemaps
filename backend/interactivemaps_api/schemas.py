@@ -45,6 +45,7 @@ class MapPointBase(BaseModel):
     name: str
     description: typing.Optional[str]
     image: typing.Optional[str]
+    author: str
 
 class MapPointCreate(MapPointBase):
     pass
@@ -55,3 +56,6 @@ class MapPoint(MapPointBase):
 
     class Config:
         orm_mode = True
+
+class MapLayerDetails(MapLayer):
+    points: typing.List[MapPoint]

@@ -49,8 +49,19 @@ def update_map_layer(db: Session, map_id: int, layer_id: int, map_layer: schemas
     current_map_layer.name = map_layer.name or current_map_layer.name
     current_map_layer.description = map_layer.description or current_map_layer.description
     current_map_layer.image = map_layer.image or current_map_layer.image
+    curent_map_layer.author = map_layer.author or current_map_layer.author
 
     db.commit()
     db.refresh(current_map_layer)
 
     return current_map_layer
+
+def get_map_points(db: Session, map_id: int, map_layer_id: int) -> list[models.InteractiveMapPoint]:
+    return db.query(models.InteractiveMapPoint).filter(models.InteractiveMapPoint.map_id == map_id, models.InteractiveMapPoint.map_layer_id == map_layer_id).all()
+
+def create_map_point(db: Session, map_id: int, map_layer_id: int, map_point: schemas.MapPointCreate) -> models.InteractiveMapPoint:
+    db_map_point = models.InteractiveMapPoint(**map_point.dict(), map_id=map_id, map_layer_id=map_layer_id)
+    db.add(db_map_point)
+    db.commit()
+    db.refresh(db_map_point)
+    return db_map_point
