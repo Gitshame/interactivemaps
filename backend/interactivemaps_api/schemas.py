@@ -35,7 +35,7 @@ class MapLayer(MapLayerBase):
     class Config:
         orm_mode = True
 
-class MapLayerUpdate(MapLayer):
+class MapLayerUpdate(MapLayerCreate):
     pass
 
 class MapDetails(Map):
