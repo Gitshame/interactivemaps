@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p>{{ mapsStore }}</p>
+    <p>{{ mapsStore.maps }}</p>
   </div>
 </template>
 
@@ -40,7 +40,7 @@ export default defineComponent({
     const mapsStore = useInteractiveMapStore()
     api.get("/maps")
       .then((response) => {
-        mapsStore.loadMaps(response)
+        mapsStore.loadMaps(response.data)
       })
     return { mapsStore };
   },
