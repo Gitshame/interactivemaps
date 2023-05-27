@@ -1,11 +1,11 @@
-# import pydantic Basemodel
 from pydantic import BaseModel
+import typing
 
 class MapBase(BaseModel):
     name: str
-    game: Optional[str]
-    description: Optional[str]
-    image: Optional[str]
+    game: typing.Optional[str]
+    description: typing.Optional[str]
+    image: typing.Optional[str]
     author: str
 
 class MapCreate(MapBase):
@@ -16,13 +16,10 @@ class Map(MapBase):
     class Config:
         orm_mode = True
 
-class MapInDBBase(MapBase):
-    id: int
-
 class MapLayerBase(BaseModel):
     name: str
-    description: Optional[str]
-    image: Optional[str]
+    description: typing.Optional[str]
+    image: typing.Optional[str]
 
 class MapLayerCreate(MapLayerBase):
     pass
@@ -36,8 +33,8 @@ class MapLayer(MapLayerBase):
 
 class MapPointBase(BaseModel):
     name: str
-    description: Optional[str]
-    image: Optional[str]
+    description: typing.Optional[str]
+    image: typing.Optional[str]
 
 class MapPointCreate(MapPointBase):
     pass
