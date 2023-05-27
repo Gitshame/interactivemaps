@@ -32,8 +32,8 @@ def update_map(db: Session, map_id: int, map: schemas.MapCreate) -> models.Inter
 def get_map_layers(db: Session, map_id: int) -> list[models.InteractiveMapLayer]:
     return db.query(models.InteractiveMapLayer).filter(models.InteractiveMapLayer.map_id == map_id).all()
 
-def create_map_layer(db: Session, map_layer: schemas.MapLayerCreate) -> models.InteractiveMapLayer:
-    db_map_layer = models.InteractiveMapLayer(**map_layer.dict())
+def create_map_layer(db: Session, map_id: int, map_layer: schemas.MapLayerCreate) -> models.InteractiveMapLayer:
+    db_map_layer = models.InteractiveMapLayer(**map_layer.dict(), map_id=map_id)
     db.add(db_map_layer)
     db.commit()
     db.refresh(db_map_layer)

@@ -37,6 +37,6 @@ def route_get_map_details(map_id: int, db = Depends(get_db)):
     response['layers'] = crud.get_map_layers(db, map_id)
     return response
 
-@app.post("/maps/{map_id}/layers", response_model=schemas.Layer)
-def route_create_layer(map_id: int, layer: schemas.LayerCreate, db = Depends(get_db)):
+@app.post("/maps/{map_id}/layers", response_model=schemas.MapLayer)
+def route_create_layer(map_id: int, layer: schemas.MapLayerCreate, db = Depends(get_db)):
     return crud.create_map_layer(db, map_id, layer)
