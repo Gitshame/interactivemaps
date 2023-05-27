@@ -7,6 +7,8 @@ class MapBase(BaseModel):
     description: typing.Optional[str]
     image: typing.Optional[str]
     author: str
+    x_dimension: int
+    y_dimension: int
 
 class MapCreate(MapBase):
     pass
@@ -23,7 +25,7 @@ class MapLayerBase(BaseModel):
     name: str
     description: typing.Optional[str]
     image: typing.Optional[str]
-    author: str
+    priority: int
 
 class MapLayerCreate(MapLayerBase):
     pass
@@ -46,6 +48,8 @@ class MapPointBase(BaseModel):
     description: typing.Optional[str]
     image: typing.Optional[str]
     author: str
+    x_position: int
+    y_position: int
 
 class MapPointCreate(MapPointBase):
     pass

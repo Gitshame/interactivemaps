@@ -10,6 +10,8 @@ class InteractiveMap(Base):
     description = Column(String)
     image = Column(String)
     author = Column(String)
+    x_dimension = Column(Integer)
+    y_dimension = Column(Integer)
 
 class InteractiveMapLayer(Base):
     __tablename__ = 'map_layers'
@@ -20,6 +22,7 @@ class InteractiveMapLayer(Base):
     description = Column(String)
     image = Column(String)
     author = Column(String)
+    priority = Column(Integer)
 
 class InteractiveMapPoint(Base):
     __tablename__ = 'map_points'
@@ -30,3 +33,5 @@ class InteractiveMapPoint(Base):
     description = Column(String)
     image = Column(String)
     author = Column(String)
+    x_position = Column(Integer)
+    y_position = Column(Integer)
