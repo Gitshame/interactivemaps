@@ -40,3 +40,7 @@ def route_get_map_details(map_id: int, db = Depends(get_db)):
 @app.post("/maps/{map_id}/layers", response_model=schemas.MapLayer)
 def route_create_layer(map_id: int, layer: schemas.MapLayerCreate, db = Depends(get_db)):
     return crud.create_map_layer(db, map_id, layer)
+
+@app.patch("/maps/{map_id}/layers/{layer_id}", response_model=schemas.MapLayer)
+def route_update_layer(map_id: int, layer_id: int, layer: schemas.MapLayerUpdate, db = Depends(get_db)):
+    return crud.update_map_layer(db, map_id, layer_id, layer)

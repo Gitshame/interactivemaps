@@ -29,6 +29,9 @@ def update_map(db: Session, map_id: int, map: schemas.MapCreate) -> models.Inter
 
     return current_map
 
+def get_map_layer(db: Session, map_id: int, layer_id: int) -> models.InteractiveMapLayer:
+    return db.query(models.InteractiveMapLayer).filter(models.InteractiveMapLayer.map_id == map_id, models.InteractiveMapLayer.id == layer_id).first()
+
 def get_map_layers(db: Session, map_id: int) -> list[models.InteractiveMapLayer]:
     return db.query(models.InteractiveMapLayer).filter(models.InteractiveMapLayer.map_id == map_id).all()
 
@@ -38,3 +41,16 @@ def create_map_layer(db: Session, map_id: int, map_layer: schemas.MapLayerCreate
     db.commit()
     db.refresh(db_map_layer)
     return db_map_layer
+
+def update_map_layer(db: Session, map_id: int, layer_id: int, map_layer: schemas.MapLayerCreate) -> models.InteractiveMapLayer:
+    current_map_layer = get_map_layer(db, map_id, layer_id)
+    if current_map_layer is None:
+        raise HTTPException(status_code=404, detail="Layer not found")
+    current_map_layer.name = map_layer.name or current_map_layer.name
+    current_map_layer.description = map_layer.description or current_map_layer.description
+    current_map_layer.image = map_layer.image or current_map_layer.image
+
+    db.commit()
+    db.refresh(current_map_layer)
+
+    return current_map_layer

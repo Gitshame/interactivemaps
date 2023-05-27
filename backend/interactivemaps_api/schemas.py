@@ -23,6 +23,7 @@ class MapLayerBase(BaseModel):
     name: str
     description: typing.Optional[str]
     image: typing.Optional[str]
+    author: str
 
 class MapLayerCreate(MapLayerBase):
     pass
@@ -33,6 +34,9 @@ class MapLayer(MapLayerBase):
 
     class Config:
         orm_mode = True
+
+class MapLayerUpdate(MapLayer):
+    pass
 
 class MapDetails(Map):
     layers: typing.List[MapLayer]
