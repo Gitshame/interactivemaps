@@ -19,9 +19,6 @@ class Map(MapBase):
 class MapUpdate(MapBase):
     pass
 
-class MapDetails(Map):
-    layers: typing.List[MapLayer]
-
 class MapLayerBase(BaseModel):
     name: str
     description: typing.Optional[str]
@@ -36,6 +33,9 @@ class MapLayer(MapLayerBase):
 
     class Config:
         orm_mode = True
+
+class MapDetails(Map):
+    layers: typing.List[MapLayer]
 
 class MapPointBase(BaseModel):
     name: str

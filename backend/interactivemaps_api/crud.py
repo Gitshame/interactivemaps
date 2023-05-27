@@ -38,4 +38,3 @@ def create_map_layer(db: Session, map_layer: schemas.MapLayerCreate) -> models.I
     db.commit()
     db.refresh(db_map_layer)
     return db_map_layer
-)
