@@ -15,6 +15,7 @@ import {
 } from 'vue';
 import { Todo, Meta } from './models';
 import { api } from 'boot/axios';
+import { useInteractiveMapStore } from 'stores/map-store'
 
 export default defineComponent({
   name: 'ExampleComponent',
