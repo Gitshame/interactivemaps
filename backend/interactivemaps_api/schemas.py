@@ -16,6 +16,9 @@ class Map(MapBase):
     class Config:
         orm_mode = True
 
+class MapUpdate(MapBase):
+    pass
+
 class MapLayerBase(BaseModel):
     name: str
     description: typing.Optional[str]

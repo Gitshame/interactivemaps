@@ -25,3 +25,7 @@ def route_get_maps(db = Depends(get_db)):
 @app.post("/maps", response_model=schemas.Map)
 def route_create_map(map: schemas.MapCreate, db = Depends(get_db)):
     return crud.create_map(db, map)
+
+@app.patch("/maps/{map_id}", response_model=schemas.Map)
+def route_update_map(map_id: int, map: schemas.MapUpdate, db = Depends(get_db)):
+    return crud.update_map(db, map_id, map)
