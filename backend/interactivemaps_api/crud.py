@@ -27,3 +27,6 @@ def update_map(db: Session, map_id: int, map: schemas.MapCreate) -> models.Inter
     db.refresh(current_map)
 
     return current_map
+
+def get_map_layers(db: Session, map_id: int) -> list[models.InteractiveMapLayer]:
+    return db.query(models.InteractiveMapLayer).filter(models.InteractiveMapLayer.map_id == map_id).all()

@@ -19,6 +19,9 @@ class Map(MapBase):
 class MapUpdate(MapBase):
     pass
 
+class MapDetails(Map):
+    layers: typing.List[MapLayer]
+
 class MapLayerBase(BaseModel):
     name: str
     description: typing.Optional[str]
