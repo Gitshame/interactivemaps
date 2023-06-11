@@ -5,7 +5,7 @@
       rounded
       color="deep-purple"
       label="Log In with Discord"
-      href="http://localhost:8000/login"
+      :href="api_base_url() + '/login'"
     />
   </div>
 </template>
@@ -20,10 +20,15 @@ import {
   Ref,
 } from 'vue';
 import { Todo, Meta } from './models';
-import { api } from 'boot/axios';
+import {api, api_base_url} from 'boot/axios';
 import { useInteractiveMapStore } from 'stores/map-store'
 
 export default defineComponent({
   name: 'ClickToLoginDiscord',
+  methods: {
+    api_base_url() {
+      return api_base_url
+    }
+  },
 });
 </script>
