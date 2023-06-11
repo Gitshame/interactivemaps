@@ -7,6 +7,9 @@ name = "pypi"
 fastapi = "*"
 sqlalchemy = "*"
 uvicorn = "*"
+python-jose = "*"
+requests = "*"
+urllib3 = "<=1.26.15"
 
 [dev-packages]
 

@@ -15,7 +15,9 @@
           Quasar App
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <div>
+          <ClickToLoginDiscord />
+        </div>
       </q-toolbar>
     </q-header>
 
@@ -48,6 +50,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import EssentialLink from 'components/EssentialLink.vue';
+import ClickToLoginDiscord from "components/ClickToLoginDiscord.vue";
 
 const linksList = [
   {
@@ -98,6 +101,7 @@ export default defineComponent({
   name: 'MainLayout',
 
   components: {
+    ClickToLoginDiscord,
     EssentialLink
   },
 

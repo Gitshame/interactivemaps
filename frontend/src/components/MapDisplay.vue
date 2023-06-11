@@ -2,8 +2,9 @@
   <div>
     <q-card v-if=!mapsStore.loading class="items-stretch">
       <l-map
-        v-model:zoom="zoom" ref="map" :zoom=1 :center="this.centerInput" :crs=crs
-        style="height: 50pc;" @ready="mapClickHandler">
+        v-model:zoom="zoom" ref="map" :min-zoom=-2 :zoom=1 :center="this.centerInput" :crs=crs
+        style="height: 50pc;"
+        @ready="mapClickHandler">
         <l-image-overlay
           :url=mapsStore.getMap(mapId).image
           :bounds=mapsStore.getMapBounds(mapId)

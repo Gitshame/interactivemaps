@@ -14,6 +14,10 @@
         <q-toolbar-title>
           Interactive Maps
         </q-toolbar-title>
+
+        <div>
+          <ClickToLoginDiscord />
+        </div>
       </q-toolbar>
     </q-header>
 
@@ -51,12 +55,14 @@ import { defineComponent, ref } from 'vue';
 import MapSidebarLink from 'components/MapSidebarLink.vue';
 import { useInteractiveMapStore } from 'stores/map-store'
 import {APIClient} from 'assets/js/api_client'
+import ClickToLoginDiscord from "components/ClickToLoginDiscord.vue";
 
 
 export default defineComponent({
   name: 'MapLayout',
 
   components: {
+    ClickToLoginDiscord,
     MapSidebarLink
   },
 

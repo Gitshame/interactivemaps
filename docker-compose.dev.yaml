@@ -1,0 +1,32 @@
+services:
+  interactivemaps_backend:
+    build: backend/
+    environment:
+      UVICORN_PORT: 8001
+      JWT_TOKEN_SECRET: "SOMESECRET"
+      AUTH_TOKEN_URL: "http://host.containers.internal:8000/token"
+      SQLITE_PATH: /db/sql_app.db
+      ORIGINS: "http://localhost:9000"
+    ports:
+      - 8001:8001
+    volumes:
+      - backend_db:/db
+  interactivemaps_auth:
+    build: backend/
+    environment:
+      UVICORN_PORT: 8000
+      DISCORD_AUTH_REDIRECT: "http://localhost:8000/callback"
+      DISCORD_CLIENT_ID: 0118999
+      DISCORD_CLIENT_SECRET: secret
+      DISCORD_BOT_TOKEN: t0k3n
+      JWT_TOKEN_SECRET: "SOMESECRET"
+      SQLITE_PATH: /db/sql_app.db
+      ORIGINS: "http://localhost:9000"
+    ports:
+      - 8000:8000
+    entrypoint: ["pipenv", "run", "uvicorn", "interactivemaps_api.auth_api:app", "--reload", "--host", "0.0.0.0"]
+    volumes:
+      - backend_db:/db
+
+volumes:
+  backend_db:
