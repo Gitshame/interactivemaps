@@ -9,6 +9,7 @@ from . import crud, models, schemas
 from .crud import get_db, get_user, get_groups
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -37,8 +38,12 @@ def test_route(user: typing.Annotated[typing.Optional[schemas.UserData], Depends
 
 @app.get('/token')
 def route_get_token(code: str):
-    resp = requests.get(f"{AUTH_BASE_URL}?code={code}")
+    resp = requests.get(f"{AUTH_BASE_URL}/token?code={code}")
     return {"token": resp.text[1:-1]}
+
+@app.get('/login', response_class=RedirectResponse)
+def route_login():
+    return RedirectResponse(f"{AUTH_BASE_URL}/login")
 
 @app.get('/maps', response_model=typing.List[schemas.Map])
 def route_get_maps(user: typing.Annotated[typing.Optional[models.InteractiveMapUser], Depends(crud.get_user)],

@@ -51,17 +51,19 @@ def get_user(db: typing.Annotated[Session, Depends(get_db)],
     token = authorization
 
     token_value = token.split(' ')[1]
+    try:
+        jwt_data = jwt.decode(token_value, SECRET_KEY, algorithms=[ALGORITHM])
 
-    jwt_data = jwt.decode(token_value, SECRET_KEY, algorithms=[ALGORITHM])
+        user = get_user_from_db(db, jwt_data['discord']['id'])
 
-    user = get_user_from_db(db, jwt_data['discord']['id'])
+        if not user:
+            user = register_user(db, jwt_data['discord']['id'], jwt_data['discord']['username'])
 
-    if not user:
-        user = register_user(db, jwt_data['discord']['id'], jwt_data['discord']['username'])
+        response = schemas.UserData(user=user.__dict__, roles=jwt_data['discord_groups'])
 
-    response = schemas.UserData(user=user.__dict__, roles=jwt_data['discord_groups'])
-
-    return response
+        return response
+    except:
+        return None
 
 
 def get_db_user(db: typing.Annotated[Session, Depends(get_db)],
