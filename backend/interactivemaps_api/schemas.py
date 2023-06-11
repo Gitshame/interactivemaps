@@ -100,9 +100,16 @@ class MapGroupCreate(MapGroupBase):
 class MapGroup(MapGroupBase):
     id: int
 
+
 @dataclass
 class LayerPermission:
     read: bool
     create: bool
     delete: bool
     modify: bool
+
+
+class MyUser(BaseModel):
+    discord_id: int
+    display_name: str
+    is_admin: bool

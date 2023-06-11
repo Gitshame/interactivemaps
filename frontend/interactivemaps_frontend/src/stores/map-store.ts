@@ -1,15 +1,24 @@
-import { defineStore } from 'pinia';
+import {defineStore,} from 'pinia';
 import type L from "leaflet";
-import { computed, ref } from "vue";
-import {map} from "leaflet";
+import {computed} from "vue";
+
+interface InteractiveMap {
+  id: number
+  layers: Array<InteractiveMapLayer>
+  x_dimension: number
+  y_dimension: number
+}
+
+interface InteractiveMapLayer {
+  points: Array<object>
+}
 
 export const useInteractiveMapStore = defineStore('interactive-maps', {
   state: () => ({
     maps: [],
-    loading: true
+    loading: false
   }),
-  getters: {
-  },
+  getters: {},
   actions: {
     loadMaps(mapsList: []) {
       this.maps = mapsList;
@@ -18,21 +27,34 @@ export const useInteractiveMapStore = defineStore('interactive-maps', {
       const currentMap = this.getMap(mapId)
       currentMap['layers'] = layers
     },
-    getMap(mapId: number) {
-      return this.maps.find((map) => map.id === mapId);
+    addMap(map: InteractiveMap) {
+      this.maps.push(map)
     },
-    getMapLayer(mapId: number, layerId: number) {
+    getMap(mapId: number): InteractiveMap | undefined {
+      return this.maps.find((map) => {
+        return (map.id === mapId);
+      });
+    },
+    getMapLayer(mapId: number, layerId: number): InteractiveMapLayer | null {
       const mapData = this.getMap(mapId)
       if (mapData === undefined) {
-        return {}
-      }
-      else {
-        return mapData['layers'].find((layer) => layer.id === layerId);
+        return null
+      } else {
+        console.log(mapData)
+        const return_layer = mapData['layers'].find(function (layer) {
+          return layer.id === layerId
+        })
+        if (return_layer === undefined) {
+          return null
+        }
+        return return_layer
       }
     },
     loadMapLayerPoints(mapId: number, layerId: number, points: []) {
       const currentMapLayer = this.getMapLayer(mapId, layerId)
-      currentMapLayer['points'] = points
+      if (currentMapLayer != null) {
+        currentMapLayer["points"] = points
+      }
     },
     getMapBounds(mapId: number) {
       const map = this.getMap(mapId);

@@ -8,7 +8,6 @@ from .database import SessionLocal
 
 from jose import jwt
 
-
 SECRET_KEY = os.environ.get('JWT_TOKEN_SECRET')
 ALGORITHM = os.environ.get('JWT_TOKEN_ALGO', "HS256")
 
@@ -21,6 +20,7 @@ def get_db() -> Session:
     finally:
         db.close()
 
+
 def get_map(db: typing.Annotated[Session, Depends(get_db)],
             map_id: int) -> models.InteractiveMap:
     response_map = db.query(models.InteractiveMap).filter(models.InteractiveMap.id == map_id).first()
@@ -30,18 +30,19 @@ def get_map(db: typing.Annotated[Session, Depends(get_db)],
 
     return response_map
 
+
 def get_map_layer(db: typing.Annotated[Session, Depends(get_db)],
                   map_id: int,
                   layer_id: int) -> models.InteractiveMapLayer:
-
-    response_layer = db.query(models.InteractiveMapLayer)\
-                       .filter(models.InteractiveMapLayer.map_id == map_id,
-                               models.InteractiveMapLayer.id == layer_id)\
-                       .first()
+    response_layer = db.query(models.InteractiveMapLayer) \
+        .filter(models.InteractiveMapLayer.map_id == map_id,
+                models.InteractiveMapLayer.id == layer_id) \
+        .first()
     if not response_layer:
         raise HTTPException(status_code=404, detail='Layer not found')
 
     return response_layer
+
 
 def get_user(db: typing.Annotated[Session, Depends(get_db)],
              authorization: typing.Annotated[str, Header()] = None) -> typing.Optional[schemas.UserData]:
@@ -67,7 +68,8 @@ def get_user(db: typing.Annotated[Session, Depends(get_db)],
 
 
 def get_db_user(db: typing.Annotated[Session, Depends(get_db)],
-                user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)]) -> typing.Optional[models.InteractiveMapUser]:
+                user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)]) -> typing.Optional[
+    models.InteractiveMapUser]:
     if not user:
         return None
     return get_user_from_db(db, user.user['discord_id'])
@@ -75,7 +77,9 @@ def get_db_user(db: typing.Annotated[Session, Depends(get_db)],
 
 def get_user_from_db(db: Session,
                      discord_user_id: int) -> typing.Optional[models.InteractiveMapUser]:
-    return db.query(models.InteractiveMapUser).filter(models.InteractiveMapUser.discord_id == int(discord_user_id)).first()
+    return db.query(models.InteractiveMapUser).filter(
+        models.InteractiveMapUser.discord_id == int(discord_user_id)).first()
+
 
 def get_groups(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
                db: typing.Annotated[Session, Depends(get_db)]) -> typing.List[models.InteractiveMapGroup]:
@@ -95,12 +99,14 @@ def is_layer_owner(user: typing.Annotated[typing.Optional[schemas.UserData], Dep
                    layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)]) -> bool:
     return user.id == layer.author
 
+
 def is_admin(user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
              ) -> bool:
     if not user.admin:
         raise HTTPException(status_code=403, detail="Insufficient permission")
 
     return user.admin
+
 
 def has_layer_read_permission(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
                               db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
@@ -120,11 +126,12 @@ def has_layer_read_permission(user: typing.Annotated[typing.Optional[schemas.Use
 
     return has_read
 
+
 def has_layer_create_permission(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
-                              db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
-                              layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
-                              groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
-                              db: typing.Annotated[Session, Depends(get_db)]) -> bool:
+                                db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
+                                layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
+                                groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
+                                db: typing.Annotated[Session, Depends(get_db)]) -> bool:
     user_permissions = get_user_layer_permissions(db, layer.id, db_user.id)
     group_permissions = get_group_layer_permissions(db, layer.id, [i.id for i in groups])
 
@@ -135,11 +142,12 @@ def has_layer_create_permission(user: typing.Annotated[typing.Optional[schemas.U
 
     return has_create
 
+
 def has_layer_modify_permission(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
-                              db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
-                              layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
-                              groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
-                              db: typing.Annotated[Session, Depends(get_db)]) -> bool:
+                                db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
+                                layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
+                                groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
+                                db: typing.Annotated[Session, Depends(get_db)]) -> bool:
     user_permissions = get_user_layer_permissions(db, layer.id, db_user.id)
     group_permissions = get_group_layer_permissions(db, layer.id, [i.id for i in groups])
 
@@ -150,11 +158,12 @@ def has_layer_modify_permission(user: typing.Annotated[typing.Optional[schemas.U
 
     return has_modify
 
+
 def has_layer_delete_permission(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
-                              db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
-                              layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
-                              groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
-                              db: typing.Annotated[Session, Depends(get_db)]) -> bool:
+                                db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
+                                layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
+                                groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
+                                db: typing.Annotated[Session, Depends(get_db)]) -> bool:
     user_permissions = get_user_layer_permissions(db, layer.id, db_user.id)
     group_permissions = get_group_layer_permissions(db, layer.id, [i.id for i in groups])
 
@@ -169,9 +178,9 @@ def has_layer_delete_permission(user: typing.Annotated[typing.Optional[schemas.U
 def get_user_layer_permissions(db: Session,
                                layer_id: int,
                                user_id: int) -> schemas.LayerPermission:
-    permissions: models.InteractiveMapUserPermission = db.query(models.InteractiveMapUserPermission)\
-                                                         .filter(models.InteractiveMapUserPermission.map_layer_id == layer_id,
-                                                                 models.InteractiveMapUserPermission.user_id == user_id).first()
+    permissions: models.InteractiveMapUserPermission = db.query(models.InteractiveMapUserPermission) \
+        .filter(models.InteractiveMapUserPermission.map_layer_id == layer_id,
+                models.InteractiveMapUserPermission.user_id == user_id).first()
 
     if permissions:
         return schemas.LayerPermission(read=permissions.read,
@@ -184,13 +193,14 @@ def get_user_layer_permissions(db: Session,
                                        modify=False,
                                        delete=False)
 
+
 def get_group_layer_permissions(db: Session,
                                 layer_id: int,
                                 group_ids: typing.List[int]) -> schemas.LayerPermission:
     groups_tuple = tuple(group_ids)
     permissions = db.query(models.InteractiveMapGroupPermission) \
-                    .filter(models.InteractiveMapGroupPermission.map_layer_id == layer_id,
-                            models.InteractiveMapGroupPermission.group_id.in_(groups_tuple)).all()
+        .filter(models.InteractiveMapGroupPermission.map_layer_id == layer_id,
+                models.InteractiveMapGroupPermission.group_id.in_(groups_tuple)).all()
 
     result_permissions = {
         'read': False,
@@ -212,6 +222,7 @@ def get_layers(db: Session,
                map_id: int) -> typing.List[models.InteractiveMapLayer]:
     return db.query(models.InteractiveMapLayer).filter(models.InteractiveMapLayer.map_id == map_id).all()
 
+
 def create_map_point(db: Session,
                      db_layer: models.InteractiveMapLayer,
                      map_point: schemas.MapPointCreate,
@@ -224,12 +235,14 @@ def create_map_point(db: Session,
     db.refresh(db_map_point)
     return db_map_point
 
+
 ###
 # OLD FUNCTIONS, MANUALLY CALLED IN API METHODS
 ###
 
 def get_maps(db: Session) -> list[models.InteractiveMap]:
     return db.query(models.InteractiveMap).all()
+
 
 def update_map(db: Session, map_id: int, map: schemas.MapCreate) -> models.InteractiveMap:
     current_map = get_map(db, map_id)
@@ -259,6 +272,7 @@ def create_map_layer(db: Session,
     db.refresh(db_map_layer)
     return db_map_layer
 
+
 def update_map_layer(db: Session,
                      map_id: int,
                      layer_id: int,
@@ -274,6 +288,7 @@ def update_map_layer(db: Session,
     db.refresh(current_map_layer)
 
     return current_map_layer
+
 
 def get_map_points(db: Session, map_id: int, map_layer_id: int) -> list[models.InteractiveMapPoint]:
     return db.query(models.InteractiveMapPoint).filter(models.InteractiveMapPoint.map_layer_id == map_layer_id).all()
@@ -301,42 +316,48 @@ def create_map(db: Session,
 
     return db_map
 
+
 def get_user_display_name(db: Session,
                           user_id: int) -> str:
     return db.query(models.InteractiveMapUser).filter(models.InteractiveMapUser.id == user_id).first().display_name
 
+
 def get_user_groups(db: Session,
                     user_roles: typing.List[int]):
     roles_tuple = tuple(user_roles)
-    return db.query(models.InteractiveMapGroup).filter(models.InteractiveMapGroup.discord_group_id.in_(roles_tuple)).all()
+    return db.query(models.InteractiveMapGroup).filter(
+        models.InteractiveMapGroup.discord_group_id.in_(roles_tuple)).all()
+
 
 def get_group(db: Session,
               discord_group_id: int) -> models.InteractiveMapGroup:
-    groups = db.query(models.InteractiveMapGroup).filter(models.InteractiveMapGroup.discord_group_id == discord_group_id).all()
+    groups = db.query(models.InteractiveMapGroup).filter(
+        models.InteractiveMapGroup.discord_group_id == discord_group_id).all()
     if len(groups) == 0:
         return None
     return groups[0]
 
+
 def get_group_by_id(db: Session,
-              id: int):
+                    id: int):
     groups = db.query(models.InteractiveMapGroup).filter(models.InteractiveMapGroup.id == id).all()
     if len(groups) == 0:
         return None
     return groups[0]
 
+
 def create_group(db: Session,
                  group: schemas.MapGroupCreate):
-
     db_group = models.InteractiveMapGroup(**group.dict())
 
     db.add(db_group)
     db.commit()
     db.refresh(db_group)
 
+
 def update_group(db: Session,
                  group: schemas.MapGroupCreate,
                  group_id: int):
-
     db_group = get_group_by_id(db, group_id)
 
     db_group.display_name = group.display_name or db_group.display_name
@@ -346,7 +367,9 @@ def update_group(db: Session,
 
     return db_group
 
+
 def delete_map(db: Session,
                map_id: int):
     map = get_map(db, map_id)
     db.delete(map)
+    db.commit()

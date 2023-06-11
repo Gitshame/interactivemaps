@@ -16,7 +16,7 @@
         </q-toolbar-title>
 
         <div>
-          <ClickToLoginDiscord />
+          <ClickToLoginDiscord/>
         </div>
       </q-toolbar>
     </q-header>
@@ -42,43 +42,63 @@
           :link="`/maps/${map.id}`"
         />
       </q-list>
+      <q-btn rounded
+             color="primary"
+             class="full-width"
+             label="Create New Map"
+             v-if="this.isAdmin"
+             @click="createNewMapDialogOpen=true"
+      />
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <router-view/>
     </q-page-container>
+    <CreateNewMapDialog :visible="createNewMapDialogOpen"
+                        :api_client="backendClient"
+                        @close="createNewMapDialogOpen=false"/>
   </q-layout>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import {defineComponent, ref} from 'vue';
 import MapSidebarLink from 'components/MapSidebarLink.vue';
-import { useInteractiveMapStore } from 'stores/map-store'
+import {useInteractiveMapStore} from 'stores/map-store'
 import {APIClient} from 'assets/js/api_client'
 import ClickToLoginDiscord from "components/ClickToLoginDiscord.vue";
+import CreateNewMapDialog from "components/CreateNewMapDialog.vue";
 
 
 export default defineComponent({
   name: 'MapLayout',
 
   components: {
+    CreateNewMapDialog,
     ClickToLoginDiscord,
     MapSidebarLink
   },
 
-  setup () {
+  setup() {
     const mapsStore = useInteractiveMapStore()
     const backendClient = new APIClient(mapsStore)
     backendClient.loadAllMaps()
 
     const leftDrawerOpen = ref(false)
+    const createNewMapDialogOpen = ref(false)
 
     return {
       leftDrawerOpen,
-      toggleLeftDrawer () {
+      toggleLeftDrawer() {
         leftDrawerOpen.value = !leftDrawerOpen.value
       },
-      mapsStore
+      mapsStore,
+      createNewMapDialogOpen,
+      backendClient
+    }
+  },
+  computed: {
+    isAdmin() {
+      return this.backendClient.userInfo.value['is_admin']
     }
   }
 });
