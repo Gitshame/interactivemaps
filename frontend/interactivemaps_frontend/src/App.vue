@@ -1,6 +1,6 @@
 <template>
   <div>
-    <router-view />
+    <router-view/>
   </div>
 </template>
 
@@ -10,9 +10,10 @@ import {useRoute} from "vue-router";
 import {api} from "boot/axios";
 import {useInteractiveMapStore} from "stores/map-store";
 import {APIClient} from "assets/js/api_client";
+
 export default defineComponent({
   name: 'App',
-  setup () {
+  setup() {
     const mapsStore = useInteractiveMapStore()
     const backendClient = new APIClient(mapsStore)
 
@@ -22,6 +23,7 @@ export default defineComponent({
 
     if (code != null) {
       backendClient.getToken(code);
+      urlParams.delete('code');
     }
   },
 });

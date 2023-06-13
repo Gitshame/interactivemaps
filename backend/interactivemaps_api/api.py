@@ -26,6 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Dependencies
 
 
@@ -36,14 +37,24 @@ def test_route(user: typing.Annotated[typing.Optional[schemas.UserData], Depends
                has_read: typing.Annotated[bool, Depends(crud.has_layer_read_permission)]):
     print(has_read)
 
+
 @app.get('/token')
 def route_get_token(code: str):
     resp = requests.get(f"{AUTH_BASE_URL}/token?code={code}")
     return {"token": resp.text[1:-1]}
 
+
 @app.get('/login', response_class=RedirectResponse)
 def route_login():
     return RedirectResponse(f"{AUTH_BASE_URL}/login")
+
+
+@app.get('/me', response_model=schemas.MyUser)
+def get_my_user(db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)]):
+    return {'discord_id': db_user.discord_id,
+            'display_name': db_user.display_name,
+            'is_admin': db_user.admin}
+
 
 @app.get('/maps', response_model=typing.List[schemas.Map])
 def route_get_maps(user: typing.Annotated[typing.Optional[models.InteractiveMapUser], Depends(crud.get_user)],
@@ -143,7 +154,6 @@ def route_create_layer(user: typing.Annotated[schemas.UserData, Depends(get_user
                        map_id: int,
                        layer: schemas.MapLayerCreate,
                        db: typing.Annotated[Session, Depends(get_db)]):
-
     if layer.public:
         crud.is_admin(db_user)
 
