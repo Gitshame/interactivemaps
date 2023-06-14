@@ -4,13 +4,13 @@ import {computed} from "vue";
 
 interface InteractiveMap {
   id: number
-  layers: Array<InteractiveMapLayer>
+  layers: object
   x_dimension: number
   y_dimension: number
 }
 
 interface InteractiveMapLayer {
-  points: Array<object>
+  points: object
 }
 
 export const useInteractiveMapStore = defineStore('interactive-maps', {
@@ -18,14 +18,23 @@ export const useInteractiveMapStore = defineStore('interactive-maps', {
     maps: [],
     loading: false
   }),
-  getters: {},
+  getters: {
+  },
   actions: {
     loadMaps(mapsList: []) {
       this.maps = mapsList;
     },
     loadMapLayers(mapId: number, layers: []) {
       const currentMap = this.getMap(mapId)
-      currentMap['layers'] = layers
+      if (currentMap != undefined) {
+        if (currentMap.layers == undefined){
+          currentMap.layers = {}
+        }
+        layers.forEach((layer) => {
+          const layer_id: string = layer['id'].toString()
+          currentMap.layers[layer_id] = layer
+        })
+      }
     },
     addMap(map: InteractiveMap) {
       this.maps.push(map)
@@ -40,20 +49,20 @@ export const useInteractiveMapStore = defineStore('interactive-maps', {
       if (mapData === undefined) {
         return null
       } else {
-        console.log(mapData)
-        const return_layer = mapData['layers'].find(function (layer) {
-          return layer.id === layerId
-        })
-        if (return_layer === undefined) {
-          return null
-        }
-        return return_layer
+        return mapData['layers'][layerId]
       }
     },
     loadMapLayerPoints(mapId: number, layerId: number, points: []) {
       const currentMapLayer = this.getMapLayer(mapId, layerId)
-      if (currentMapLayer != null) {
-        currentMapLayer["points"] = points
+
+      if (currentMapLayer != undefined) {
+        if (currentMapLayer.points == undefined){
+          currentMapLayer.points = {}
+        }
+        points.forEach((point) => {
+          const layer_id: string = point['id'].toString()
+          currentMapLayer.points[layer_id] = point
+        })
       }
     },
     getMapBounds(mapId: number) {
@@ -66,6 +75,20 @@ export const useInteractiveMapStore = defineStore('interactive-maps', {
           ] as L.LatLngBoundsLiteral
       );
       return bounds.value;
+    },
+    getMapLayers(mapId: number): Array<InteractiveMapLayer> {
+      const currentMap = this.getMap(mapId)
+      if (currentMap == undefined || currentMap.layers == undefined) {
+        return []
+      }
+      return Object.values(currentMap.layers)
+    },
+    getMapLayerPoints(mapId: number, layerId: number) {
+      const layer = this.getMapLayer(mapId, layerId)
+      if (layer == undefined || layer.points == undefined) {
+        return []
+      }
+      return Object.values(layer.points)
     }
   },
 });
