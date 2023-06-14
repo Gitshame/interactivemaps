@@ -19,6 +19,12 @@
         </q-card>
       </q-card-section>
     </q-card>
+    <q-btn
+      label="Add New Layer"
+      color="primary"
+      rounded
+      class="full-width"
+      @click="this.$emit('createNewLayer')" />
   </q-card>
 </template>
 
@@ -44,13 +50,7 @@ export default defineComponent({
     const mapsStore = useInteractiveMapStore()
     const backendClient = new APIClient(mapsStore)
 
-    console.log(props.layers)
-
-    const focusMapHandlerFake = (point) => {
-      console.log(point)
-    }
-
-    return { mapsStore, focusMapHandlerFake }
+    return { mapsStore }
   },
 });
 </script>

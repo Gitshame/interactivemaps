@@ -80,4 +80,32 @@ export class APIClient {
       return true
     })
   }
+
+  async createLayer(map_id: number, layer_name: string, description: string, map_url: string, priority: number, isPublic: boolean) {
+    const create_body = {
+      name: layer_name,
+      description: description,
+      image: map_url,
+      priority: priority,
+      public: isPublic
+    }
+
+    api.post(`/maps/${map_id}/layers`, create_body).then((response) => {
+      this.mapStore.loadMapLayers(map_id, [response.data])
+      return true
+    })
+  }
+
+  async createPoint(map_id: number, layer_id: number, point_name: string, x_position: number, y_position: number) {
+    const create_body = {
+      name: point_name,
+      x_position: x_position,
+      y_position: y_position
+    }
+    api.post(`/maps/${map_id}/layers/${layer_id}/points`, create_body).then((response) => {
+      this.mapStore.loadMapLayerPoints(map_id, layer_id, [response.data])
+      return true
+    })
+
+  }
 }
