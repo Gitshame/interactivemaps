@@ -2,7 +2,7 @@ import {_GettersTree, defineStore,} from 'pinia';
 import type L from "leaflet";
 import {computed} from "vue";
 
-interface InteractiveMap {
+export interface InteractiveMap {
   id: number
   layers: Map<string, InteractiveMapLayer>
   x_dimension: number
@@ -10,13 +10,13 @@ interface InteractiveMap {
   image: string
 }
 
-interface InteractiveMapLayer {
+export interface InteractiveMapLayer {
   id: number
   points: Map<string, InteractiveMapPoint>
   image: string
 }
 
-interface InteractiveMapPoint {
+export interface InteractiveMapPoint {
   id: number
   name: string
   x_position: number
@@ -39,6 +39,7 @@ export interface MapStoreActions extends MapStoreState{
   getMapLayers: (mapId: number) => Array<InteractiveMapLayer>
   getMapLayerPoints: (mapId: number, layerId: number) => Array<InteractiveMapPoint>
   setLoading: (loading: boolean) => void
+  removePoint: (map_id: number, layer_id: number, point_id: number) => void
 }
 
 export const useInteractiveMapStore = defineStore('interactive-maps', {
@@ -123,6 +124,12 @@ export const useInteractiveMapStore = defineStore('interactive-maps', {
     },
     setLoading(loading: boolean) {
       this.loading = loading
+    },
+    removePoint(map_id: number, layer_id: number, point_id: number) {
+      const layer = this.getMapLayer(map_id, layer_id)
+      if (layer != undefined) {
+        layer.points.delete(point_id.toString())
+      }
     }
   },
 });

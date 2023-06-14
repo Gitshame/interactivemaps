@@ -197,3 +197,11 @@ def route_create_point(map_id: int,
                        db_layer: typing.Annotated[models.InteractiveMapLayer, Depends(crud.get_map_layer)],
                        has_create: typing.Annotated[bool, Depends(crud.has_layer_create_permission)]):
     return crud.create_map_point(db, db_layer, point, db_user)
+
+@app.delete("/maps/{map_id}/layers/{layer_id}/points/{point_id}")
+def route_delete_point(map_id: int,
+                       layer_id: int,
+                       point_id: int,
+                       db: typing.Annotated[Session, Depends(get_db)],
+                       has_delete: typing.Annotated[bool, Depends(crud.has_layer_delete_permission)]):
+    crud.delete_point(db, point_id)

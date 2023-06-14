@@ -373,3 +373,16 @@ def delete_map(db: Session,
     map = get_map(db, map_id)
     db.delete(map)
     db.commit()
+
+def get_point(db: Session,
+              point_id: int):
+    points = db.query(models.InteractiveMapPoint).filter(models.InteractiveMapPoint.id == point_id).all()
+    if len(points) == 0:
+        return None
+    return points[0]
+def delete_point(db: Session,
+                 point_id: int):
+    point = get_point(db, point_id)
+    db.delete(point)
+
+    db.commit()

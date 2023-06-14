@@ -109,4 +109,11 @@ export class APIClient {
     })
 
   }
+
+  async deletePoint(map_id: number, layer_id: number, point_id: number) {
+    api.delete(`/maps/${map_id}/layers/${layer_id}/points/${point_id}`).then(() => {
+      this.mapStore.removePoint(map_id, layer_id, point_id)
+      return true
+    })
+  }
 }

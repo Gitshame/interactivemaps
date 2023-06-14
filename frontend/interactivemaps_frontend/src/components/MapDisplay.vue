@@ -18,7 +18,13 @@
               v-for="map_marker in mapsStore.getMapLayerPoints(map_id, layer.id)"
               v-bind:key="map_marker.id"
               :lat-lng="[map_marker.y_position, map_marker.x_position]">
-              <l-popup>{{ map_marker.name }}</l-popup>
+              <l-popup :options="{minWidth: 350}">
+                <MapPointCard
+                  :point="map_marker"
+                  :layer_id="layer.id"
+                  :map_id="map_id"
+                  :apiClient="apiClient"/>
+              </l-popup>
             </l-marker>
           </l-image-overlay>
         </l-image-overlay>
@@ -61,12 +67,15 @@ import {useInteractiveMapStore} from 'stores/map-store'
 import {CRS} from 'leaflet'
 import {APIClient} from 'assets/js/api_client'
 import CreateNewPointCard from "components/CreateNewPointCard.vue";
+import MapPointCard from "components/MapPointCard.vue";
 
 
 
 export default defineComponent({
   name: 'MapDisplay',
-  components: {CreateNewPointCard, LPopup, LMarker, LImageOverlay, LMap},
+  components: {
+    MapPointCard,
+    CreateNewPointCard, LPopup, LMarker, LImageOverlay, LMap},
   props: {
     map_id: {
       type: Number,
@@ -77,6 +86,7 @@ export default defineComponent({
   },
   setup(props) {
     const mapsStore = useInteractiveMapStore()
+    const apiClient = new APIClient(mapsStore)
     const createNewPointDialogVisible = ref(false)
     const newPointXPosition = ref(0)
     const newPointYPosition = ref(0)
@@ -106,7 +116,8 @@ export default defineComponent({
       newPointYPosition,
       map,
       mapLayers,
-      mapBounds};
+      mapBounds,
+      apiClient};
   },
 });
 </script>
