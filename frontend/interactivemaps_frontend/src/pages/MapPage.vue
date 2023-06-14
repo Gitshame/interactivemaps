@@ -4,6 +4,7 @@
       <layer-list-card
         class="col-2"
         :layers="mapsStore.getMapLayers(mapId)"
+        :map_id="mapId"
         style="height: 50pc"
         :focusMapHandler="focusMapHandler"
         @createNewLayer="createNewLayerDialogVisible=true"

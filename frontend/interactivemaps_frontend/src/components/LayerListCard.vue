@@ -11,7 +11,7 @@
           </q-card-section>
           <q-separator inset />
           <q-card-section
-            v-for="point in layer.points"
+            v-for="point in mapsStore.getMapLayerPoints(this.map_id, layer.id)"
             v-bind:key="point.id"
             @click="this.focusMapHandler([point.x_position, point.y_position])">
             {{ point.name }}
@@ -44,7 +44,8 @@ export default defineComponent({
   name: 'LayerListCard',
   props: {
     layers: Array,
-    focusMapHandler: Function
+    focusMapHandler: Function,
+    map_id: Number
   },
   setup (props) {
     const mapsStore = useInteractiveMapStore()

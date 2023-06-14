@@ -1,14 +1,15 @@
 import {api} from "boot/axios";
-import {Store, StoreDefinition} from "pinia";
+import {_GettersTree, Store, StoreDefinition} from "pinia";
+import {MapStoreState, MapStoreActions} from "stores/map-store"
 import {RemovableRef, useStorage} from '@vueuse/core'
 import {ref} from "vue";
 
 export class APIClient {
-  mapStore: StoreDefinition<"interactive-maps">
+  mapStore: Store<"interactive-maps", MapStoreState, _GettersTree<MapStoreState>, MapStoreActions>
   userInfo: object
   apiToken: RemovableRef<any>
 
-  constructor(map_store: StoreDefinition<"interactive-maps">) {
+  constructor(map_store: Store<"interactive-maps", MapStoreState, _GettersTree<MapStoreState>, MapStoreActions>) {
     this.mapStore = map_store
     this.userInfo = ref({})
     this.apiToken = useStorage('api_token', '')
@@ -23,7 +24,7 @@ export class APIClient {
       api.get("/token", {params: {code: code}})
         .then((response) => {
           api.defaults.headers.common.Authorization = `Bearer ${response.data['token']}`;
-          const api_token = useStorage('api_token');
+          const api_token = useStorage('api_token', null);
           api_token.value = response.data['token'];
           this.getUserInfo()
         })
@@ -31,16 +32,16 @@ export class APIClient {
   }
 
   loadAllMaps() {
-    this.mapStore.loading = true
+    this.mapStore.setLoading(true)
     api.get("/maps")
       .then((response) => {
         this.mapStore.loadMaps(response.data)
-        this.mapStore.loading = false
+        this.mapStore.setLoading(false)
       })
   }
 
   loadMapLayers(map_id: number) {
-    this.mapStore.loading = true
+    this.mapStore.setLoading(true)
     api.get(`/maps/${map_id}`)
       .then((response) => {
         this.mapStore.loadMapLayers(map_id, response.data.layers)
@@ -48,7 +49,7 @@ export class APIClient {
         for (const layerIndex in response.data.layers) {
           this.loadMapLayerPoints(map_id, response.data.layers[layerIndex].id)
         }
-        this.mapStore.loading = false
+        this.mapStore.setLoading(false)
       })
   }
 
@@ -61,7 +62,7 @@ export class APIClient {
 
   getUserInfo() {
     api.get('/me').then((response) => {
-      this.userInfo.value = response.data
+      this.userInfo = response.data
     })
   }
 
