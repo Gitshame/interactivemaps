@@ -107,73 +107,6 @@ def is_admin(user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_us
 
     return user.admin
 
-
-def has_layer_read_permission(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
-                              db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
-                              layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
-                              groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
-                              db: typing.Annotated[Session, Depends(get_db)]) -> bool:
-    if layer.public:
-        return True
-
-    user_permissions = get_user_layer_permissions(db, layer.id, db_user.id)
-    group_permissions = get_group_layer_permissions(db, layer.id, [i.id for i in groups])
-
-    has_read = user_permissions.read or group_permissions.read or is_admin(db_user)
-
-    if not has_read:
-        raise HTTPException(status_code=403, detail='Unable to read layer')
-
-    return has_read
-
-
-def has_layer_create_permission(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
-                                db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
-                                layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
-                                groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
-                                db: typing.Annotated[Session, Depends(get_db)]) -> bool:
-    user_permissions = get_user_layer_permissions(db, layer.id, db_user.id)
-    group_permissions = get_group_layer_permissions(db, layer.id, [i.id for i in groups])
-
-    has_create = user_permissions.create or group_permissions.create or is_admin(db_user)
-
-    if not has_create:
-        raise HTTPException(status_code=403, detail='Unable to create point in layer')
-
-    return has_create
-
-
-def has_layer_modify_permission(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
-                                db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
-                                layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
-                                groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
-                                db: typing.Annotated[Session, Depends(get_db)]) -> bool:
-    user_permissions = get_user_layer_permissions(db, layer.id, db_user.id)
-    group_permissions = get_group_layer_permissions(db, layer.id, [i.id for i in groups])
-
-    has_modify = user_permissions.modify or group_permissions.modify or is_admin(db_user)
-
-    if not has_modify:
-        raise HTTPException(status_code=403, detail='Unable to modify point in layer')
-
-    return has_modify
-
-
-def has_layer_delete_permission(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
-                                db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
-                                layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
-                                groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
-                                db: typing.Annotated[Session, Depends(get_db)]) -> bool:
-    user_permissions = get_user_layer_permissions(db, layer.id, db_user.id)
-    group_permissions = get_group_layer_permissions(db, layer.id, [i.id for i in groups])
-
-    has_delete = user_permissions.delete or group_permissions.delete or is_admin(db_user)
-
-    if not has_delete:
-        raise HTTPException(status_code=403, detail='Unable to delete point in layer')
-
-    return has_delete
-
 def summarize_permissions(db: typing.Annotated[Session, Depends(get_db)],
                           layer_id: int,
                           db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
@@ -191,7 +124,44 @@ def summarize_permissions(db: typing.Annotated[Session, Depends(get_db)],
         'create': user_permissions.create or group_permissions.create or is_admin or is_owner,
         'modify': user_permissions.modify or group_permissions.modify or is_admin or is_owner,
         'delete': user_permissions.delete or group_permissions.delete or is_admin or is_owner,
+        # 'delete': False
     }
+
+
+def has_layer_read_permission(permissions: typing.Annotated[typing.Dict, Depends(summarize_permissions)]) -> bool:
+    has_read = permissions['read']
+
+    if not has_read:
+        raise HTTPException(status_code=403, detail='Unable to read layer')
+
+    return has_read
+
+
+def has_layer_create_permission(permissions: typing.Annotated[typing.Dict, Depends(summarize_permissions)]) -> bool:
+    has_create = permissions['create']
+
+    if not has_create:
+        raise HTTPException(status_code=403, detail='Unable to create point in layer')
+
+    return has_create
+
+
+def has_layer_modify_permission(permissions: typing.Annotated[typing.Dict, Depends(summarize_permissions)]) -> bool:
+    has_modify = permissions['modify']
+
+    if not has_modify:
+        raise HTTPException(status_code=403, detail='Unable to modify point in layer')
+
+    return has_modify
+
+
+def has_layer_delete_permission(permissions: typing.Annotated[typing.Dict, Depends(summarize_permissions)]) -> bool:
+    has_delete = permissions['delete']
+
+    if not has_delete:
+        raise HTTPException(status_code=403, detail='Unable to delete point in layer')
+
+    return has_delete
 
 
 def get_user_layer_permissions(db: Session,
@@ -404,4 +374,11 @@ def delete_point(db: Session,
     point = get_point(db, point_id)
     db.delete(point)
 
+    db.commit()
+
+def delete_layer(db: Session,
+                 map_id: int,
+                 layer_id: int):
+    layer = get_map_layer(db, map_id, layer_id)
+    db.delete(layer)
     db.commit()

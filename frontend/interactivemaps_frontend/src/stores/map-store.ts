@@ -48,6 +48,7 @@ export interface MapStoreActions extends MapStoreState{
   getMapLayerPoints: (mapId: number, layerId: number) => Array<InteractiveMapPoint>
   setLoading: (loading: boolean) => void
   removePoint: (map_id: number, layer_id: number, point_id: number) => void
+  removeLayer: (map_id: number, layer_id: number) => void
 }
 
 export const useInteractiveMapStore = defineStore('interactive-maps', {
@@ -137,6 +138,12 @@ export const useInteractiveMapStore = defineStore('interactive-maps', {
       const layer = this.getMapLayer(map_id, layer_id)
       if (layer != undefined) {
         layer.points.delete(point_id.toString())
+      }
+    },
+    removeLayer(map_id: number, layer_id: number) {
+      const map = this.getMap(map_id)
+      if (map != undefined) {
+        map.layers.delete(layer_id.toString())
       }
     }
   },

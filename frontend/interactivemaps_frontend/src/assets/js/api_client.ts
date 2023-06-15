@@ -3,6 +3,7 @@ import {_GettersTree, Store, StoreDefinition} from "pinia";
 import {MapStoreState, MapStoreActions} from "stores/map-store"
 import {RemovableRef, useStorage} from '@vueuse/core'
 import {ref} from "vue";
+import {map} from "leaflet";
 
 export class APIClient {
   mapStore: Store<"interactive-maps", MapStoreState, _GettersTree<MapStoreState>, MapStoreActions>
@@ -113,6 +114,13 @@ export class APIClient {
   async deletePoint(map_id: number, layer_id: number, point_id: number) {
     api.delete(`/maps/${map_id}/layers/${layer_id}/points/${point_id}`).then(() => {
       this.mapStore.removePoint(map_id, layer_id, point_id)
+      return true
+    })
+  }
+
+  async deleteLayer(map_id: number, layer_id: number) {
+    api.delete(`/maps/${map_id}/layers/${layer_id}`).then(() => {
+      this.mapStore.removeLayer(map_id, layer_id)
       return true
     })
   }
