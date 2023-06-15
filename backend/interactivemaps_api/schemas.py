@@ -50,12 +50,16 @@ class MapLayer(MapLayerBase):
         orm_mode = True
 
 
+class MapLayerSummary(MapLayer):
+    permissions: typing.Dict[str, bool]
+
+
 class MapLayerUpdate(MapLayerCreate):
     pass
 
 
 class MapDetails(Map):
-    layers: typing.List[MapLayer]
+    layers: typing.List[MapLayerSummary]
 
 
 class MapPointBase(BaseModel):
@@ -81,6 +85,7 @@ class MapPoint(MapPointBase):
 
 class MapLayerDetails(MapLayer):
     points: typing.List[MapPoint]
+    permissions: typing.Dict[str, bool]
 
 
 class UserData(BaseModel):

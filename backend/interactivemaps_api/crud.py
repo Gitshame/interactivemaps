@@ -174,6 +174,25 @@ def has_layer_delete_permission(user: typing.Annotated[typing.Optional[schemas.U
 
     return has_delete
 
+def summarize_permissions(db: typing.Annotated[Session, Depends(get_db)],
+                          layer_id: int,
+                          db_user: typing.Annotated[models.InteractiveMapUser, Depends(get_db_user)],
+                          layer: typing.Annotated[models.InteractiveMapLayer, Depends(get_map_layer)],
+                          groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)]):
+
+    user_permissions = get_user_layer_permissions(db, layer_id, db_user.id)
+    group_permissions = get_group_layer_permissions(db, layer_id, [i.id for i in groups])
+
+    is_owner = layer.author == db_user.id
+    is_admin = db_user.admin
+
+    return {
+        'read': user_permissions.read or group_permissions.read or is_admin or is_owner or layer.public,
+        'create': user_permissions.create or group_permissions.create or is_admin or is_owner,
+        'modify': user_permissions.modify or group_permissions.modify or is_admin or is_owner,
+        'delete': user_permissions.delete or group_permissions.delete or is_admin or is_owner,
+    }
+
 
 def get_user_layer_permissions(db: Session,
                                layer_id: int,

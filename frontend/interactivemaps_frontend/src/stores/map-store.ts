@@ -14,6 +14,7 @@ export interface InteractiveMapLayer {
   id: number
   points: Map<string, InteractiveMapPoint>
   image: string
+  permissions: LayerPermissions
 }
 
 export interface InteractiveMapPoint {
@@ -26,6 +27,13 @@ export interface InteractiveMapPoint {
 export interface MapStoreState {
   maps: Array<InteractiveMap>
   loading: boolean
+}
+
+export interface LayerPermissions {
+  read: boolean
+  create: boolean
+  delete: boolean
+  modify: boolean
 }
 
 export interface MapStoreActions extends MapStoreState{

@@ -9,7 +9,8 @@
         rounded
         icon="delete_forever"
         label="Delete"
-        @click="handleDelete"/>
+        @click="handleDelete"
+        v-if="canDelete"/>
     </q-card-actions>
   </div>
 </template>
@@ -46,6 +47,10 @@ export default defineComponent({
     },
     apiClient: {
       type: APIClient,
+      required: true
+    },
+    canDelete: {
+      type: Boolean,
       required: true
     }
   },

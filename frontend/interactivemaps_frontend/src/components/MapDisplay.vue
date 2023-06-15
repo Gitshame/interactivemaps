@@ -23,7 +23,8 @@
                   :point="map_marker"
                   :layer_id="layer.id"
                   :map_id="map_id"
-                  :apiClient="apiClient"/>
+                  :apiClient="apiClient"
+                  :canDelete="layer.permissions.delete"/>
               </l-popup>
             </l-marker>
           </l-image-overlay>
@@ -37,7 +38,7 @@
       </l-map>
       <CreateNewPointCard
         :visible="createNewPointDialogVisible"
-        :layers="mapsStore.getMapLayers(map_id)"
+        :layers="validLayers"
         :map_id="map_id"
         :api_client="backendClient"
         @close="createNewPointDialogVisible=false"
@@ -106,6 +107,9 @@ export default defineComponent({
     const map = computed(() => mapsStore.getMap(props.map_id))
     const mapLayers = computed(() => mapsStore.getMapLayers(props.map_id))
     const mapBounds = computed(() => mapsStore.getMapBounds(props.map_id))
+
+    const validLayers = computed(() => mapsStore.getMapLayers(props.map_id).filter((layer) => layer.permissions.create))
+
     return {mapsStore,
       crs,
       zoom,
@@ -117,7 +121,8 @@ export default defineComponent({
       map,
       mapLayers,
       mapBounds,
-      apiClient};
+      apiClient,
+      validLayers};
   },
 });
 </script>
