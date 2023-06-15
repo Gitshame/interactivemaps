@@ -11,11 +11,18 @@
           </q-card-section>
           <q-separator inset />
           <q-card-section
-            v-for="point in layer.points"
+            v-for="point in mapsStore.getMapLayerPoints(this.map_id, layer.id)"
             v-bind:key="point.id"
             @click="this.focusMapHandler([point.x_position, point.y_position])">
             {{ point.name }}
           </q-card-section>
+          <q-card-actions>
+            <q-btn
+              icon="delete_forever"
+              label="Delete"
+              v-if="layer.permissions.delete"
+              @click="handleDeleteLayer(layer.id, $event)"/>
+          </q-card-actions>
         </q-card>
       </q-card-section>
     </q-card>
@@ -44,13 +51,21 @@ export default defineComponent({
   name: 'LayerListCard',
   props: {
     layers: Array,
-    focusMapHandler: Function
+    focusMapHandler: Function,
+    map_id: {
+      type: Number,
+      required: true
+    }
   },
   setup (props) {
     const mapsStore = useInteractiveMapStore()
     const backendClient = new APIClient(mapsStore)
 
-    return { mapsStore }
+    const handleDeleteLayer = (layer_id: number) => {
+      backendClient.deleteLayer(props.map_id, layer_id)
+    }
+
+    return { mapsStore, handleDeleteLayer }
   },
 });
 </script>

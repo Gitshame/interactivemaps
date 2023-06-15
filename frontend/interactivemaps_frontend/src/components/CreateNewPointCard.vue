@@ -68,7 +68,7 @@ export default defineComponent({
   computed: {
     isVisible() {
       return this.visible || false
-    }
+    },
   },
   data() {
     return {

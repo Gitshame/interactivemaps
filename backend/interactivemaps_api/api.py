@@ -121,16 +121,11 @@ def route_get_map_details(user: typing.Annotated[schemas.UserData, Depends(get_u
     output_layers = []
     for layer in all_layers:
         if user:
-            is_owner = int(layer.author) == db_user.id
-            has_read = False
-            try:
-                has_read = crud.has_layer_read_permission(user, db_user, layer, groups, db)
-            except:
-                pass
-            if is_owner or has_read:
-                output_layers.append(layer)
-        elif layer.public:
-            output_layers.append(layer)
+            permissions = crud.summarize_permissions(db, layer.id, db_user, layer, groups)
+            if permissions['read']:
+                new_layer = layer.__dict__
+                new_layer['permissions'] = permissions
+                output_layers.append(new_layer)
 
     response_data = map.__dict__
     response_data['layers'] = output_layers
@@ -164,13 +159,18 @@ def route_create_layer(user: typing.Annotated[schemas.UserData, Depends(get_user
 
 
 @app.get("/maps/{map_id}/layers/{layer_id}", response_model=schemas.MapLayerDetails)
-def route_get_layer_details(layer: typing.Annotated[models.InteractiveMapLayer, Depends(crud.get_map_layer)],
+def route_get_layer_details(layer_id: int,
+                            db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)],
+                            layer: typing.Annotated[models.InteractiveMapLayer, Depends(crud.get_map_layer)],
                             map: typing.Annotated[models.InteractiveMap, Depends(crud.get_map)],
+                            groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
                             has_read: typing.Annotated[bool, Depends(crud.has_layer_read_permission)],
+                            permissions: typing.Annotated[typing.Dict, Depends(crud.summarize_permissions)],
                             db: typing.Annotated[Session, Depends(get_db)]):
     response = layer.__dict__
 
     response['points'] = crud.get_map_points(db, map.id, layer.id)
+    response['permissions'] = permissions
 
     return response
 
@@ -187,6 +187,13 @@ def route_update_layer(map_id: int,
 
     return layer_data
 
+@app.delete("/maps/{map_id}/layers/{layer_id}")
+def route_delete_layer(map_id: int,
+                       layer_id: int,
+                       db: typing.Annotated[Session, Depends(get_db)],
+                       has_delete: typing.Annotated[bool, Depends(crud.has_layer_delete_permission)]):
+    crud.delete_layer(db, map_id, layer_id)
+
 
 @app.post("/maps/{map_id}/layers/{layer_id}/points", response_model=schemas.MapPoint)
 def route_create_point(map_id: int,
@@ -197,3 +204,11 @@ def route_create_point(map_id: int,
                        db_layer: typing.Annotated[models.InteractiveMapLayer, Depends(crud.get_map_layer)],
                        has_create: typing.Annotated[bool, Depends(crud.has_layer_create_permission)]):
     return crud.create_map_point(db, db_layer, point, db_user)
+
+@app.delete("/maps/{map_id}/layers/{layer_id}/points/{point_id}")
+def route_delete_point(map_id: int,
+                       layer_id: int,
+                       point_id: int,
+                       db: typing.Annotated[Session, Depends(get_db)],
+                       has_delete: typing.Annotated[bool, Depends(crud.has_layer_delete_permission)]):
+    crud.delete_point(db, point_id)
