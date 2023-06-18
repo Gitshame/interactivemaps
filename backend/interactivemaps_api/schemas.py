@@ -96,6 +96,7 @@ class UserData(BaseModel):
 class MapGroupBase(BaseModel):
     discord_group_id: int
     display_name: str
+    server_name: str
 
 
 class MapGroupCreate(MapGroupBase):
@@ -118,3 +119,36 @@ class MyUser(BaseModel):
     discord_id: int
     display_name: str
     is_admin: bool
+
+class LayerUserPermissionEntry(BaseModel):
+    user_id: int
+    read: bool
+    create: bool
+    delete: bool
+    modify: bool
+
+class LayerGroupPermissionEntry(BaseModel):
+    group_id: int
+    read: bool
+    create: bool
+    delete: bool
+    modify: bool
+
+class UserSummary(BaseModel):
+    id: int
+    display_name: str
+
+class GroupSummary(BaseModel):
+    id: int
+    display_name: str
+    server_name: str
+
+class LayerPermissionSummary(BaseModel):
+    user_permissions: typing.List[LayerUserPermissionEntry]
+    group_permissions: typing.List[LayerGroupPermissionEntry]
+
+class UsersList(BaseModel):
+    users: typing.List[UserSummary]
+
+class GroupsList(BaseModel):
+    groups: typing.List[GroupSummary]

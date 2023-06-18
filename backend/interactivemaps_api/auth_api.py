@@ -56,7 +56,6 @@ def get_discord_token_from_code(code: str):
     r = requests.post(f'{DISCORD_API_BASE}/oauth2/token', data=data, headers=headers)
     r.raise_for_status()
 
-    print(r.text)
     return r.json()
 
 
@@ -135,7 +134,7 @@ def get_known_roles_for_user(user_id: int, bot_guilds: typing.List):
     return user_roles
 
 
-def populate_group_objects(guild_id: int):
+def populate_group_objects(guild_id: int, guild_name: str):
     headers = {
         'Authorization': f'Bot {BOT_TOKEN}'
     }
@@ -152,7 +151,8 @@ def populate_group_objects(guild_id: int):
     for role in roles:
         db_role = crud.get_group(db, role['id'])
         updated_role = schemas.MapGroupCreate(discord_group_id=role['id'],
-                                              display_name=role['name'])
+                                              display_name=role['name'],
+                                              server_name=guild_name)
         if not db_role:
             print("creating")
             db_role = crud.create_group(db, updated_role)
@@ -203,6 +203,6 @@ def get_token(code: str):
     }
 
     for guild in guilds:
-        populate_group_objects(guild['id'])
+        populate_group_objects(guild['id'], guild['name'])
 
     return generate_jwt_from_user(jwt_contents)

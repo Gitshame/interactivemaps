@@ -50,6 +50,7 @@ class InteractiveMapGroup(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     discord_group_id = Column(Integer)
+    server_name = Column(String)
     display_name = Column(String)
 
 class InteractiveMapUserPermission(Base):

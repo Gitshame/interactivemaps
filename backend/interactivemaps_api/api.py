@@ -51,6 +51,7 @@ def route_login():
 
 @app.get('/me', response_model=schemas.MyUser)
 def get_my_user(db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)]):
+    print(db_user)
     return {'discord_id': db_user.discord_id,
             'display_name': db_user.display_name,
             'is_admin': db_user.admin}
@@ -143,17 +144,21 @@ def route_delete_map(user: typing.Annotated[schemas.UserData, Depends(get_user)]
     return
 
 
-@app.post("/maps/{map_id}/layers", response_model=schemas.MapLayer)
+@app.post("/maps/{map_id}/layers", response_model=schemas.MapLayerSummary)
 def route_create_layer(user: typing.Annotated[schemas.UserData, Depends(get_user)],
                        db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)],
                        map_id: int,
                        layer: schemas.MapLayerCreate,
+                       groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
                        db: typing.Annotated[Session, Depends(get_db)]):
     if layer.public:
         crud.is_admin(db_user)
 
-    layer_data = crud.create_map_layer(db, map_id, layer, db_user.id).__dict__
+    new_layer = crud.create_map_layer(db, map_id, layer, db_user.id)
+
+    layer_data = new_layer.__dict__
     layer_data['author'] = crud.get_user_display_name(db, layer_data['author'])
+    layer_data['permissions'] = crud.summarize_permissions(db, new_layer.id, db_user, new_layer, groups)
 
     return layer_data
 
@@ -212,3 +217,43 @@ def route_delete_point(map_id: int,
                        db: typing.Annotated[Session, Depends(get_db)],
                        has_delete: typing.Annotated[bool, Depends(crud.has_layer_delete_permission)]):
     crud.delete_point(db, point_id)
+
+@app.get("/maps/{map_id}/layers/{layer_id}/permissions", response_model=schemas.LayerPermissionSummary)
+def route_get_permissions(map_id: int,
+                          layer_id: int,
+                          db: typing.Annotated[Session, Depends(get_db)]):
+    return {'user_permissions': crud.get_all_user_layer_permissions(db, layer_id),
+            'group_permissions': crud.get_all_group_layer_permissions(db, layer_id)}
+@app.get("/users", response_model=schemas.UsersList)
+def route_get_users(
+        db: typing.Annotated[Session, Depends(get_db)],
+        db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)]):
+    if not db_user:
+        raise HTTPException(status_code=401, detail='Unauthorized')
+
+    users = crud.get_all_users(db)
+
+    return {"users": [schemas.UserSummary(id=i.id, display_name=i.display_name) for i in users]}
+
+@app.get("/groups", response_model=schemas.GroupsList)
+def route_get_groups(
+        db: typing.Annotated[Session, Depends(get_db)],
+        db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)]):
+    if not db_user:
+        raise HTTPException(status_code=401, detail='Unauthorized')
+
+    groups = crud.get_all_groups(db)
+
+    return {"groups": [schemas.GroupSummary(id=g.id, display_name=g.display_name, server_name=g.server_name) for g in groups]}
+
+@app.post("/maps/{map_id}/layers/{layer_id}/permissions", response_model=schemas.LayerPermissionSummary)
+def route_post_permissions(map_id: int,
+                           layer_id: int,
+                           db: typing.Annotated[Session, Depends(get_db)],
+                           new_permissions: schemas.LayerPermissionSummary,
+                           has_modify: typing.Annotated[bool, Depends(crud.has_layer_modify_permission)]):
+    crud.set_layer_permissions(db, layer_id, new_permissions)
+
+    return route_get_permissions(map_id,
+                                 layer_id,
+                                 db)

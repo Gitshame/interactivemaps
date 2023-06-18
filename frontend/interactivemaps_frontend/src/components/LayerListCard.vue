@@ -5,25 +5,9 @@
       v-for="layer in layers"
       v-bind:key="layer.id">
       <q-card-section>
-        <q-card bordered>
-          <q-card-section class="text-bold">
-            {{ layer.name }}
-          </q-card-section>
-          <q-separator inset />
-          <q-card-section
-            v-for="point in mapsStore.getMapLayerPoints(this.map_id, layer.id)"
-            v-bind:key="point.id"
-            @click="this.focusMapHandler([point.x_position, point.y_position])">
-            {{ point.name }}
-          </q-card-section>
-          <q-card-actions>
-            <q-btn
-              icon="delete_forever"
-              label="Delete"
-              v-if="layer.permissions.delete"
-              @click="handleDeleteLayer(layer.id, $event)"/>
-          </q-card-actions>
-        </q-card>
+        <LayerCard :focusMapHandler="this.focusMapHandler"
+                   :map_id="map_id"
+                   :layer="layer" />
       </q-card-section>
     </q-card>
     <q-btn
@@ -46,26 +30,30 @@ import {
 } from 'vue';
 import {useInteractiveMapStore} from "stores/map-store";
 import {APIClient} from "assets/js/api_client";
+import LayerPermissionDialog from "components/LayerPermissionDialog.vue";
+import LayerCard from "components/LayerCard.vue";
 
 export default defineComponent({
   name: 'LayerListCard',
+  components: {
+    LayerCard
+  },
   props: {
     layers: Array,
-    focusMapHandler: Function,
+    focusMapHandler: {
+      type: Function,
+      required: true
+    },
     map_id: {
       type: Number,
       required: true
     }
   },
-  setup (props) {
+  setup () {
     const mapsStore = useInteractiveMapStore()
     const backendClient = new APIClient(mapsStore)
 
-    const handleDeleteLayer = (layer_id: number) => {
-      backendClient.deleteLayer(props.map_id, layer_id)
-    }
-
-    return { mapsStore, handleDeleteLayer }
+    return { mapsStore }
   },
 });
 </script>
