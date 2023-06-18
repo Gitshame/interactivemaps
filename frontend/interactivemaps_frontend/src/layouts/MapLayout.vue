@@ -83,6 +83,8 @@ export default defineComponent({
     const backendClient = new APIClient(mapsStore)
     backendClient.loadAllMaps()
 
+    const isAdmin = ref(backendClient.userInfo)
+
     const leftDrawerOpen = ref(false)
     const createNewMapDialogOpen = ref(false)
 
@@ -93,13 +95,15 @@ export default defineComponent({
       },
       mapsStore,
       createNewMapDialogOpen,
-      backendClient
+      backendClient,
+      isAdmin
     }
   },
-  computed: {
-    isAdmin() {
-      return this.backendClient.userInfo.value['is_admin']
-    }
-  }
+  // computed: {
+  //   isAdmin() {
+  //     console.log(this.backendClient.userInfo.value)
+  //     return this.backendClient.userInfo.is_admin
+  //   }
+  // }
 });
 </script>

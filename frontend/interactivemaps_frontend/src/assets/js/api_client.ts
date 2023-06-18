@@ -5,6 +5,27 @@ import {RemovableRef, useStorage} from '@vueuse/core'
 import {ref} from "vue";
 import {map} from "leaflet";
 
+export interface LayerPermissions {
+  user_permissions: Array<UserPermissionEntry>
+  group_permissions: Array<GroupPermissionEntry>
+}
+
+interface UserPermissionEntry {
+  user_id: number
+  read: boolean
+  create: boolean
+  modify: boolean
+  delete: boolean
+}
+
+interface GroupPermissionEntry {
+  group_id: number
+  read: boolean
+  create: boolean
+  modify: boolean
+  delete: boolean
+}
+
 export class APIClient {
   mapStore: Store<"interactive-maps", MapStoreState, _GettersTree<MapStoreState>, MapStoreActions>
   userInfo: object
@@ -123,5 +144,20 @@ export class APIClient {
       this.mapStore.removeLayer(map_id, layer_id)
       return true
     })
+  }
+  async loadMapLayerPermissions(map_id: number, layer_id: number) {
+    return api.get(`/maps/${map_id}/layers/${layer_id}/permissions`)
+  }
+
+  async getAllUsers() {
+    return api.get("/users")
+  }
+
+  async getAllGroups() {
+    return api.get("/groups")
+  }
+
+  async updateLayerPermissions(map_id: number, layer_id: number, new_permissions: LayerPermissions) {
+    return api.post(`/maps/${map_id}/layers/${layer_id}/permissions`, new_permissions)
   }
 }

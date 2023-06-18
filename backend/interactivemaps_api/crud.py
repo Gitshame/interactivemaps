@@ -11,6 +11,7 @@ from jose import jwt
 SECRET_KEY = os.environ.get('JWT_TOKEN_SECRET')
 ALGORITHM = os.environ.get('JWT_TOKEN_ALGO', "HS256")
 
+ADMIN_IDS = [i.strip() for i in os.environ.get('ADMIN_IDS', '').split(',')]
 
 # DEPENDENCY INJECTION METHODS
 def get_db() -> Session:
@@ -60,6 +61,12 @@ def get_user(db: typing.Annotated[Session, Depends(get_db)],
         if not user:
             user = register_user(db, jwt_data['discord']['id'], jwt_data['discord']['username'])
 
+        if str(user.discord_id) in ADMIN_IDS:
+            print("User found in ADMIN IDs list - making an admin")
+            user.admin = True
+            db.commit()
+            db.refresh(user)
+
         response = schemas.UserData(user=user.__dict__, roles=jwt_data['discord_groups'])
 
         return response
@@ -70,8 +77,6 @@ def get_user(db: typing.Annotated[Session, Depends(get_db)],
 def get_db_user(db: typing.Annotated[Session, Depends(get_db)],
                 user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)]) -> typing.Optional[
     models.InteractiveMapUser]:
-    if not user:
-        return None
     return get_user_from_db(db, user.user['discord_id'])
 
 
@@ -123,8 +128,7 @@ def summarize_permissions(db: typing.Annotated[Session, Depends(get_db)],
         'read': user_permissions.read or group_permissions.read or is_admin or is_owner or layer.public,
         'create': user_permissions.create or group_permissions.create or is_admin or is_owner,
         'modify': user_permissions.modify or group_permissions.modify or is_admin or is_owner,
-        'delete': user_permissions.delete or group_permissions.delete or is_admin or is_owner,
-        # 'delete': False
+        'delete': user_permissions.delete or group_permissions.delete or is_admin or is_owner
     }
 
 
@@ -206,6 +210,28 @@ def get_group_layer_permissions(db: Session,
 
     return schemas.LayerPermission(**result_permissions)
 
+
+def get_all_user_layer_permissions(db: Session,
+                                   layer_id: int) -> typing.List[schemas.LayerUserPermissionEntry]:
+    permissions: typing.List[models.InteractiveMapUserPermission] = db.query(models.InteractiveMapUserPermission) \
+        .filter(models.InteractiveMapUserPermission.map_layer_id == layer_id).all()
+
+    return [schemas.LayerUserPermissionEntry(user_id=p.user_id,
+                                             read=p.read,
+                                             create=p.create,
+                                             modify=p.modify,
+                                             delete=p.delete) for p in permissions]
+
+def get_all_group_layer_permissions(db: Session,
+                                   layer_id: int) -> typing.List[schemas.LayerGroupPermissionEntry]:
+    permissions: typing.List[models.InteractiveMapGroupPermission] = db.query(models.InteractiveMapGroupPermission) \
+        .filter(models.InteractiveMapGroupPermission.map_layer_id == layer_id).all()
+
+    return [schemas.LayerGroupPermissionEntry(group_id=p.group_id,
+                                             read=p.read,
+                                             create=p.create,
+                                             modify=p.modify,
+                                             delete=p.delete) for p in permissions]
 
 def get_layers(db: Session,
                map_id: int) -> typing.List[models.InteractiveMapLayer]:
@@ -381,4 +407,80 @@ def delete_layer(db: Session,
                  layer_id: int):
     layer = get_map_layer(db, map_id, layer_id)
     db.delete(layer)
+    db.commit()
+
+def get_all_users(db: Session) -> typing.List[models.InteractiveMapUser]:
+    users = db.query(models.InteractiveMapUser).all()
+
+    return users
+
+def get_all_groups(db: Session) -> typing.List[models.InteractiveMapGroup]:
+    groups = db.query(models.InteractiveMapGroup).all()
+
+    return groups
+
+def get_user_permission(db: Session,
+                        layer_id: int,
+                        user_id: int) -> models.InteractiveMapUserPermission:
+    permission = db.query(models.InteractiveMapUserPermission)\
+                   .filter(models.InteractiveMapUserPermission.user_id == user_id,
+                           models.InteractiveMapUserPermission.map_layer_id == layer_id).first()
+
+    return permission
+
+def get_group_permission(db: Session,
+                        layer_id: int,
+                        group_id: int) -> models.InteractiveMapGroupPermission:
+    permission = db.query(models.InteractiveMapGroupPermission) \
+        .filter(models.InteractiveMapGroupPermission.group_id == group_id,
+                models.InteractiveMapGroupPermission.map_layer_id == layer_id).first()
+
+    return permission
+
+
+def set_layer_permissions(db: Session,
+                          layer_id: int,
+                          permissions: schemas.LayerPermissionSummary):
+    # User permissions
+    initial_user_perms = {u.user_id:u for u in get_all_user_layer_permissions(db, layer_id)}
+    for user_permission in permissions.user_permissions:
+        if user_permission.user_id not in initial_user_perms:
+            permission = models.InteractiveMapUserPermission(map_layer_id=layer_id,
+                                                             user_id=user_permission.user_id,
+                                                             read=user_permission.read,
+                                                             modify=user_permission.modify,
+                                                             create=user_permission.create,
+                                                             delete=user_permission.delete)
+            db.add(permission)
+        else:
+            permission = get_user_permission(db, layer_id, user_permission.user_id)
+            permission.read = user_permission.read
+            permission.create = user_permission.create
+            permission.modify = user_permission.modify
+            permission.delete = user_permission.delete
+            initial_user_perms.pop(user_permission.user_id)
+    for k,v in initial_user_perms.items():
+        db.delete(get_user_permission(db, layer_id, k))
+
+
+    initial_group_perms = {g.group_id:g for g in get_all_group_layer_permissions(db, layer_id)}
+    for group_permission in permissions.group_permissions:
+        if group_permission.group_id not in group_permission:
+            permission = models.InteractiveMapGroupPermission(map_layer_id=layer_id,
+                                                             group_id=group_permission.group_id,
+                                                             read=group_permission.read,
+                                                             modify=group_permission.modify,
+                                                             create=group_permission.create,
+                                                             delete=group_permission.delete)
+            db.add(permission)
+        else:
+            permission = get_group_permission(db, layer_id, group_permission.group_id)
+            permission.read = group_permission.read
+            permission.create = group_permission.create
+            permission.modify = group_permission.modify
+            permission.delete = group_permission.delete
+            initial_group_perms.pop(group_permission.group_id)
+    for k,v in initial_group_perms.items():
+        db.delete(get_group_permission(db, layer_id, k))
+
     db.commit()

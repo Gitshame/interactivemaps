@@ -11,6 +11,7 @@ export interface InteractiveMap {
 }
 
 export interface InteractiveMapLayer {
+  name: string
   id: number
   points: Map<string, InteractiveMapPoint>
   image: string
