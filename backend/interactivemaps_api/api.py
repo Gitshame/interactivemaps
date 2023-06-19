@@ -51,7 +51,6 @@ def route_login():
 
 @app.get('/me', response_model=schemas.MyUser)
 def get_my_user(db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)]):
-    print(db_user)
     return {'discord_id': db_user.discord_id,
             'display_name': db_user.display_name,
             'is_admin': db_user.admin}
@@ -155,6 +154,17 @@ def route_create_layer(user: typing.Annotated[schemas.UserData, Depends(get_user
         crud.is_admin(db_user)
 
     new_layer = crud.create_map_layer(db, map_id, layer, db_user.id)
+
+    user_perm_entry = schemas.LayerUserPermissionEntry(user_id=db_user.id,
+                                                       read=True,
+                                                       create=True,
+                                                       modify=True,
+                                                       delete=True)
+
+    new_permissions = schemas.LayerPermissionSummary(user_permissions=[user_perm_entry], group_permissions=[])
+
+    crud.set_layer_permissions(db, new_layer.id, new_permissions)
+    db.refresh(new_layer)
 
     layer_data = new_layer.__dict__
     layer_data['author'] = crud.get_user_display_name(db, layer_data['author'])
