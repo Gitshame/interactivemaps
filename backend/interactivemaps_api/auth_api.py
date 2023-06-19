@@ -30,6 +30,7 @@ AUTH_REDIRECT = os.environ.get('DISCORD_AUTH_REDIRECT')
 CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID')
 CLIENT_SECRET = os.environ.get('DISCORD_CLIENT_SECRET')
 BOT_TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:9000')
 
 DISCORD_URL_BASE = "https://discord.com"
 DISCORD_API_BASE = f"{DISCORD_URL_BASE}/api/v10"
@@ -180,7 +181,7 @@ def get_callback(code: str):
     if not code:
         raise HTTPException(status_code=400, detail="Invalid code")
 
-    return RedirectResponse(url=f"http://localhost:9000/?code={code}")
+    return RedirectResponse(url=f"{FRONTEND_URL}/?code={code}")
 
 
 @app.get('/token')
