@@ -26,27 +26,12 @@
       show-if-above
       bordered
     >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
-
-        <MapSidebarLink
-          v-for="map in mapsStore.maps"
-          :key="map.name"
-          v-bind="map"
-          :caption="map.caption"
-          :title="map.name"
-          :link="`/maps/${map.id}`"
-        />
-      </q-list>
+      <MapSidebar :maps=mapsStore.maps />
       <q-btn rounded
              color="primary"
              class="full-width"
              label="Create New Map"
-             v-if="this.isAdmin"
+             v-if="this.userInfo.is_admin"
              @click="createNewMapDialogOpen=true"
       />
     </q-drawer>
@@ -62,20 +47,20 @@
 
 <script lang="ts">
 import {defineComponent, ref} from 'vue';
-import MapSidebarLink from 'components/MapSidebarLink.vue';
 import {useInteractiveMapStore} from 'stores/map-store'
 import {APIClient} from 'assets/js/api_client'
 import ClickToLoginDiscord from "components/ClickToLoginDiscord.vue";
 import CreateNewMapDialog from "components/CreateNewMapDialog.vue";
+import MapSidebar from "components/MapSidebar.vue";
 
 
 export default defineComponent({
   name: 'MapLayout',
 
   components: {
+    MapSidebar,
     CreateNewMapDialog,
-    ClickToLoginDiscord,
-    MapSidebarLink
+    ClickToLoginDiscord
   },
 
   setup() {
@@ -83,7 +68,7 @@ export default defineComponent({
     const backendClient = new APIClient(mapsStore)
     backendClient.loadAllMaps()
 
-    const isAdmin = ref(backendClient.userInfo)
+    const userInfo = ref(backendClient.userInfo)
 
     const leftDrawerOpen = ref(false)
     const createNewMapDialogOpen = ref(false)
@@ -96,14 +81,8 @@ export default defineComponent({
       mapsStore,
       createNewMapDialogOpen,
       backendClient,
-      isAdmin
+      userInfo
     }
   },
-  // computed: {
-  //   isAdmin() {
-  //     console.log(this.backendClient.userInfo.value)
-  //     return this.backendClient.userInfo.is_admin
-  //   }
-  // }
 });
 </script>

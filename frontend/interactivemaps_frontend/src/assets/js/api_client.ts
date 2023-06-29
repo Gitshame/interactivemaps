@@ -2,7 +2,7 @@ import {api} from "boot/axios";
 import {_GettersTree, Store, StoreDefinition} from "pinia";
 import {MapStoreState, MapStoreActions} from "stores/map-store"
 import {RemovableRef, useStorage} from '@vueuse/core'
-import {ref} from "vue";
+import {Ref, ref} from "vue";
 import {map} from "leaflet";
 
 export interface LayerPermissions {
@@ -26,14 +26,20 @@ interface GroupPermissionEntry {
   delete: boolean
 }
 
+export interface UserInfo {
+  discord_id: number | null
+  display_name: string | null
+  is_admin: boolean
+}
+
 export class APIClient {
   mapStore: Store<"interactive-maps", MapStoreState, _GettersTree<MapStoreState>, MapStoreActions>
-  userInfo: object
+  userInfo: Ref<UserInfo>
   apiToken: RemovableRef<any>
 
   constructor(map_store: Store<"interactive-maps", MapStoreState, _GettersTree<MapStoreState>, MapStoreActions>) {
     this.mapStore = map_store
-    this.userInfo = ref({})
+    this.userInfo = ref({'discord_id': null, 'display_name': null, 'is_admin': false})
     this.apiToken = useStorage('api_token', '')
     if (this.apiToken.value != '') {
       api.defaults.headers.common.Authorization = `Bearer ${this.apiToken.value}`;
