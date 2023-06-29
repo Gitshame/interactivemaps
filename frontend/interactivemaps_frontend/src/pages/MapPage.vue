@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, computed } from 'vue';
 import MapDisplay from "components/MapDisplay.vue";
 import {useRoute} from "vue-router";
 import LayerListCard from "components/LayerListCard.vue";
@@ -40,7 +40,15 @@ export default defineComponent({
     const mapsStore = useInteractiveMapStore()
     const backendClient = new APIClient(mapsStore)
 
-    const mapCenter = ref([500,500])
+    const mapBounds = computed(() => mapsStore.getMapBounds(mapId))
+
+    const mapCenter = computed(() => {
+      const mapBoundsData = mapBounds.value
+      const mapSize = [mapBoundsData[1][0] - mapBoundsData[0][0],
+                        mapBoundsData[1][1] - mapBoundsData[0][1]]
+      const mapCenterOffset = [mapSize[0] / 2, mapSize[1] / 2]
+      return [mapBoundsData[0][0] + mapCenterOffset[0], mapBoundsData[0][1] + mapCenterOffset[1]]
+    })
 
     const focusMapHandler = (center: number[]) => {
       mapCenter.value = [center[1], center[0]]
