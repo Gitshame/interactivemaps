@@ -4,6 +4,7 @@ import {computed} from "vue";
 
 export interface InteractiveMap {
   id: number
+  game: string
   layers: Map<string, InteractiveMapLayer>
   x_dimension: number
   y_dimension: number
