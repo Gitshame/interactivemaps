@@ -2,7 +2,7 @@
   <div>
     <q-card v-if="!mapsStore.loading && map != undefined" class="items-stretch">
       <l-map
-        v-model:zoom="zoom" ref="map" min-zoom="-10" :zoom=0 :center="this.centerInput" :crs=crs
+        v-model:zoom="zoom" ref="map" :min-zoom="-10" :zoom=0 :center="this.centerInput" :crs=crs
         style="height: 50pc;"
         @ready="mapOnReadyHandler">
         <l-image-overlay
@@ -36,6 +36,9 @@
         <!--          <l-popup>{{map_marker.name}}</l-popup>-->
         <!--        </l-marker>-->
       </l-map>
+      <q-card>
+        {{ mousePosition[0] }}, {{mousePosition[1]}}
+      </q-card>
       <CreateNewPointCard
         :visible="createNewPointDialogVisible"
         :layers="validLayers"
@@ -91,8 +94,14 @@ export default defineComponent({
     const createNewPointDialogVisible = ref(false)
     const newPointXPosition = ref(0)
     const newPointYPosition = ref(0)
+    const mousePosition = ref([0,0])
+
+    const mouseMoveHandler = (event: { latlng: { lng: number; lat: number; }; }) => {
+      mousePosition.value = [event.latlng.lng, event.latlng.lat]
+    }
     const mapOnReadyHandler = (map: typeof LMap) => {
       map.on('click', mapClickHandler)
+      map.on('mousemove', mouseMoveHandler)
     }
     const mapClickHandler = (event: { latlng: { lng: number; lat: number; }; }) => {
       createNewPointDialogVisible.value = true
@@ -122,7 +131,8 @@ export default defineComponent({
       mapLayers,
       mapBounds,
       apiClient,
-      validLayers};
+      validLayers,
+      mousePosition};
   },
 });
 </script>
