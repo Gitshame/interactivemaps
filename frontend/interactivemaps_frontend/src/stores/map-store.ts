@@ -14,9 +14,12 @@ export interface InteractiveMap {
 export interface InteractiveMapLayer {
   name: string
   id: number
+  description: string
   points: Map<string, InteractiveMapPoint>
   image: string
   permissions: LayerPermissions
+  priority: number
+  public: boolean
 }
 
 export interface InteractiveMapPoint {
@@ -51,6 +54,7 @@ export interface MapStoreActions extends MapStoreState{
   setLoading: (loading: boolean) => void
   removePoint: (map_id: number, layer_id: number, point_id: number) => void
   removeLayer: (map_id: number, layer_id: number) => void
+  updateLayer: (map_id: number, layer_id: number, layer: InteractiveMapLayer) => void
 }
 
 export const useInteractiveMapStore = defineStore('interactive-maps', {
@@ -146,6 +150,19 @@ export const useInteractiveMapStore = defineStore('interactive-maps', {
       const map = this.getMap(map_id)
       if (map != undefined) {
         map.layers.delete(layer_id.toString())
+      }
+    },
+    updateLayer(map_id: number, layer_id: number, layer: InteractiveMapLayer) {
+      const map = this.getMap(map_id)
+      if (map != undefined) {
+        const existing_layer = map.layers.get(layer_id.toString())
+        if (existing_layer != undefined) {
+          existing_layer.name = layer.name
+          existing_layer.description = layer.description
+          existing_layer.priority = layer.priority
+          existing_layer.image = layer.image
+          map.layers.set(layer_id.toString(), existing_layer)
+        }
       }
     }
   },
