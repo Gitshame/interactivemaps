@@ -55,18 +55,13 @@
 <script lang="ts">
 import {
   defineComponent,
-  PropType,
   computed,
   ref,
-  toRef,
-  Ref,
 } from 'vue';
 
 import "leaflet/dist/leaflet.css";
-import {LImageOverlay, LMap, LMarker, LPopup, LTileLayer} from "@vue-leaflet/vue-leaflet";
+import {LImageOverlay, LMap, LMarker, LPopup} from "@vue-leaflet/vue-leaflet";
 
-import {Todo, Meta} from './models';
-import {api} from 'boot/axios';
 import {useInteractiveMapStore} from 'stores/map-store'
 import {CRS} from 'leaflet'
 import {APIClient} from 'assets/js/api_client'

@@ -1,9 +1,8 @@
 import {api} from "boot/axios";
-import {_GettersTree, Store, StoreDefinition} from "pinia";
+import {_GettersTree, Store} from "pinia";
 import {MapStoreState, MapStoreActions} from "stores/map-store"
 import {RemovableRef, useStorage} from '@vueuse/core'
 import {Ref, ref} from "vue";
-import {map} from "leaflet";
 
 export interface LayerPermissions {
   user_permissions: Array<UserPermissionEntry>
@@ -121,6 +120,21 @@ export class APIClient {
 
     api.post(`/maps/${map_id}/layers`, create_body).then((response) => {
       this.mapStore.loadMapLayers(map_id, [response.data])
+      return true
+    })
+  }
+
+  async updateLayer(map_id: number, layer_id: number, layer_name: string, description: string, map_url: string, priority: number, isPublic: boolean) {
+    const updateBody = {
+      name: layer_name,
+      description: description,
+      image: map_url,
+      priority: priority,
+      public: isPublic
+    }
+
+    api.patch(`/maps/${map_id}/layers/${layer_id}`, updateBody).then((response) => {
+      this.mapStore.updateLayer(map_id, layer_id, response.data)
       return true
     })
   }
