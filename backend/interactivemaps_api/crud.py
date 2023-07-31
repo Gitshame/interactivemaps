@@ -390,7 +390,7 @@ def delete_map(db: Session,
     db.commit()
 
 def get_point(db: Session,
-              point_id: int):
+              point_id: int) -> models.InteractiveMapPoint:
     points = db.query(models.InteractiveMapPoint).filter(models.InteractiveMapPoint.id == point_id).all()
     if len(points) == 0:
         return None
@@ -484,3 +484,20 @@ def set_layer_permissions(db: Session,
         db.delete(get_group_permission(db, layer_id, k))
 
     db.commit()
+
+def update_point(db: Session,
+                         point_id: int,
+                         map_point: schemas.MapPointUpdate) -> models.InteractiveMapPoint:
+    current_map_point = get_point(db, point_id)
+    if current_map_point is None:
+        raise HTTPException(status_code=404, detail="Point not found")
+    current_map_point.name = map_point.name or current_map_point.name
+    current_map_point.description = map_point.description or current_map_point.description
+    current_map_point.image = map_point.image or current_map_point.image
+    current_map_point.x_position = map_point.x_position or current_map_point.x_position
+    current_map_point.y_position = map_point.y_position or current_map_point.y_position
+
+    db.commit()
+    db.refresh(current_map_point)
+
+    return current_map_point

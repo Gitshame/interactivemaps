@@ -3,6 +3,7 @@ import {_GettersTree, Store} from "pinia";
 import {MapStoreState, MapStoreActions} from "stores/map-store"
 import {RemovableRef, useStorage} from '@vueuse/core'
 import {Ref, ref} from "vue";
+import {map} from "leaflet";
 
 export interface LayerPermissions {
   user_permissions: Array<UserPermissionEntry>
@@ -150,6 +151,19 @@ export class APIClient {
       return true
     })
 
+  }
+
+  async updatePoint(map_id: number, layer_id: number, point_id: number, point_name: string, x_coord: number, y_coord: number) {
+    const updateBody = {
+      name: point_name,
+      x_position: x_coord,
+      y_position: y_coord
+    }
+
+    api.patch(`/maps/${map_id}/layers/${layer_id}/points/${point_id}`, updateBody).then((response) => {
+      this.mapStore.loadMapLayerPoints(map_id, layer_id, [response.data])
+      return true
+    })
   }
 
   async deletePoint(map_id: number, layer_id: number, point_id: number) {

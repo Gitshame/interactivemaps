@@ -74,6 +74,10 @@ class MapPointCreate(MapPointBase):
     pass
 
 
+class MapPointUpdate(MapPointBase):
+    pass
+
+
 class MapPoint(MapPointBase):
     id: int
     map_layer_id: int

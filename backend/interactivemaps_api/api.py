@@ -220,6 +220,17 @@ def route_create_point(map_id: int,
                        has_create: typing.Annotated[bool, Depends(crud.has_layer_create_permission)]):
     return crud.create_map_point(db, db_layer, point, db_user)
 
+@app.patch("/maps/{map_id}/layers/{layer_id}/points/{point_id}", response_model=schemas.MapPoint)
+def route_update_point(map_id: int,
+                       layer_id: int,
+                       point_id: int,
+                       point: schemas.MapPointUpdate,
+                       db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)],
+                       db: typing.Annotated[Session, Depends(get_db)],
+                       db_layer: typing.Annotated[models.InteractiveMapLayer, Depends(crud.get_map_layer)],
+                       has_modify: typing.Annotated[bool, Depends(crud.has_layer_modify_permission)]):
+    return crud.update_point(db, point_id, point)
+
 @app.delete("/maps/{map_id}/layers/{layer_id}/points/{point_id}")
 def route_delete_point(map_id: int,
                        layer_id: int,
