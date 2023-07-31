@@ -3,13 +3,14 @@ import os
 import typing
 
 import requests as requests
-from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi import FastAPI, Depends, HTTPException, Header, WebSocket, WebSocketDisconnect
 from .database import SessionLocal, engine
 from . import crud, models, schemas
 from .crud import get_db, get_user, get_groups
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from dataclasses import dataclass
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -28,15 +29,70 @@ app.add_middleware(
 
 
 # Dependencies
+@dataclass
+class WebsocketConnection:
+    user: schemas.UserData
+    socket: WebSocket
+
+class WebsocketConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebsocketConnection] = []
+
+    async def connect(self, websocket: WebsocketConnection):
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebsocketConnection):
+        self.active_connections.remove(websocket)
+
+    async def map_notification(self, map_id: int):
+        for connection in self.active_connections:
+            await connection.socket.send_json({'type': 'map', 'map': map_id})
+
+    async def layer_notification(self, map_id: int, layer_id: int):
+        session = next(get_db())
+
+        layer = crud.get_map_layer(session, map_id, layer_id)
+        for connection in self.active_connections:
+            db_user = crud.get_db_user(session, connection.user)
+            groups = crud.get_groups(connection.user, session)
+            permissions = crud.summarize_permissions(session, layer_id, db_user, layer, groups)
+            if permissions.get('read'):
+                await connection.socket.send_json({'type': 'layer', 'map': map_id, 'layer': layer_id})
+
+    async def point_notification(self, map_id: int, layer_id: int, point_id: int):
+        session = next(get_db())
+
+        layer = crud.get_map_layer(session, map_id, layer_id)
+        for connection in self.active_connections:
+            db_user = crud.get_db_user(session, connection.user)
+            groups = crud.get_groups(connection.user, session)
+            permissions = crud.summarize_permissions(session, layer_id, db_user, layer, groups)
+            if permissions.get('read'):
+                await connection.socket.send_json({'type': 'point', 'map': map_id, 'layer': layer_id, 'point': point_id})
 
 
-@app.get('/test/{map_id}/{layer_id}')
-def test_route(user: typing.Annotated[typing.Optional[schemas.UserData], Depends(get_user)],
-               groups: typing.Annotated[typing.List[models.InteractiveMapGroup], Depends(get_groups)],
-               db: typing.Annotated[Session, Depends(get_db)],
-               has_read: typing.Annotated[bool, Depends(crud.has_layer_read_permission)]):
-    print(has_read)
+websocketManager = WebsocketConnectionManager()
 
+@app.websocket('/ws')
+async def route_websocket(websocket: WebSocket,
+                          db: typing.Annotated[Session, Depends(get_db)]):
+    await websocket.accept()
+
+    token = await websocket.receive_text()
+    user = get_user(db, f"Bearer {token}")
+
+    if not user:
+        await websocket.close(reason='Authorization failed')
+        return
+
+    ws_connection = WebsocketConnection(socket=websocket, user=user)
+    await websocketManager.connect(ws_connection)
+    try:
+        while True:
+            await websocket.receive_text()
+
+    except WebSocketDisconnect:
+        websocketManager.disconnect(ws_connection)
 
 @app.get('/token')
 def route_get_token(code: str):
@@ -81,7 +137,7 @@ def route_get_maps(user: typing.Annotated[typing.Optional[models.InteractiveMapU
 
 
 @app.post("/maps", response_model=schemas.Map)
-def route_create_map(user: typing.Annotated[schemas.UserData, Depends(get_user)],
+async def route_create_map(user: typing.Annotated[schemas.UserData, Depends(get_user)],
                      db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)],
                      is_admin: typing.Annotated[bool, Depends(crud.is_admin)],
                      map: schemas.MapCreate,
@@ -91,11 +147,13 @@ def route_create_map(user: typing.Annotated[schemas.UserData, Depends(get_user)]
     response_data = map.__dict__
     response_data['author'] = crud.get_user_display_name(db, response_data['author'])
 
+    await websocketManager.map_notification(response_data['id'])
+
     return response_data
 
 
 @app.patch("/maps/{map_id}", response_model=schemas.Map)
-def route_update_map(user: typing.Annotated[schemas.UserData, Depends(get_user)],
+async def route_update_map(user: typing.Annotated[schemas.UserData, Depends(get_user)],
                      map_id: int,
                      map: schemas.MapUpdate,
                      is_admin: typing.Annotated[bool, Depends(crud.is_admin)],
@@ -106,11 +164,13 @@ def route_update_map(user: typing.Annotated[schemas.UserData, Depends(get_user)]
     response_data = updated_map.__dict__
     response_data['author'] = crud.get_user_display_name(db, response_data['author'])
 
+    await websocketManager.map_notification(map_id)
+
     return response_data
 
 
 @app.get("/maps/{map_id}", response_model=schemas.MapDetails)
-def route_get_map_details(user: typing.Annotated[schemas.UserData, Depends(get_user)],
+async def route_get_map_details(user: typing.Annotated[schemas.UserData, Depends(get_user)],
                           db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)],
                           map_id: int,
                           map: typing.Annotated[models.InteractiveMap, Depends(crud.get_map)],
@@ -134,17 +194,19 @@ def route_get_map_details(user: typing.Annotated[schemas.UserData, Depends(get_u
 
 
 @app.delete("/maps/{map_id}")
-def route_delete_map(user: typing.Annotated[schemas.UserData, Depends(get_user)],
+async def route_delete_map(user: typing.Annotated[schemas.UserData, Depends(get_user)],
                      map_id: int,
                      is_admin: typing.Annotated[bool, Depends(crud.is_admin)],
                      db_map: typing.Annotated[models.InteractiveMap, Depends(crud.get_map)],
                      db: typing.Annotated[Session, Depends(get_db)]):
     crud.delete_map(db, map_id)
+
+    await websocketManager.map_notification(map_id)
     return
 
 
 @app.post("/maps/{map_id}/layers", response_model=schemas.MapLayerSummary)
-def route_create_layer(user: typing.Annotated[schemas.UserData, Depends(get_user)],
+async def route_create_layer(user: typing.Annotated[schemas.UserData, Depends(get_user)],
                        db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)],
                        map_id: int,
                        layer: schemas.MapLayerCreate,
@@ -170,6 +232,8 @@ def route_create_layer(user: typing.Annotated[schemas.UserData, Depends(get_user
     layer_data['author'] = crud.get_user_display_name(db, layer_data['author'])
     layer_data['permissions'] = crud.summarize_permissions(db, new_layer.id, db_user, new_layer, groups)
 
+    await websocketManager.layer_notification(map_id, layer_data['id'])
+
     return layer_data
 
 
@@ -191,7 +255,7 @@ def route_get_layer_details(layer_id: int,
 
 
 @app.patch("/maps/{map_id}/layers/{layer_id}", response_model=schemas.MapLayer)
-def route_update_layer(map_id: int,
+async def route_update_layer(map_id: int,
                        layer_id: int,
                        layer: schemas.MapLayerUpdate,
                        db: typing.Annotated[Session, Depends(get_db)],
@@ -199,6 +263,8 @@ def route_update_layer(map_id: int,
                        has_modify: typing.Annotated[bool, Depends(crud.has_layer_modify_permission)]):
     layer_data = crud.update_map_layer(db, map_id, layer_id, layer).__dict__
     layer_data['author'] = crud.get_user_display_name(db, layer_data['author'])
+
+    await websocketManager.layer_notification(map_id, layer_data['id'])
 
     return layer_data
 
@@ -208,24 +274,31 @@ def route_delete_layer(map_id: int,
                        db: typing.Annotated[Session, Depends(get_db)],
                        has_delete: typing.Annotated[bool, Depends(crud.has_layer_delete_permission)]):
     crud.delete_layer(db, map_id, layer_id)
+    websocketManager.layer_notification(map_id, layer_id)
 
 
 @app.post("/maps/{map_id}/layers/{layer_id}/points", response_model=schemas.MapPoint)
-def route_create_point(map_id: int,
+async def route_create_point(map_id: int,
                        layer_id: int,
                        point: schemas.MapPointCreate,
                        db_user: typing.Annotated[models.InteractiveMapUser, Depends(crud.get_db_user)],
                        db: typing.Annotated[Session, Depends(get_db)],
                        db_layer: typing.Annotated[models.InteractiveMapLayer, Depends(crud.get_map_layer)],
                        has_create: typing.Annotated[bool, Depends(crud.has_layer_create_permission)]):
-    return crud.create_map_point(db, db_layer, point, db_user)
+    new_point = crud.create_map_point(db, db_layer, point, db_user)
+
+    await websocketManager.point_notification(map_id, layer_id, new_point.id)
+
+    return new_point
 
 @app.delete("/maps/{map_id}/layers/{layer_id}/points/{point_id}")
-def route_delete_point(map_id: int,
+async def route_delete_point(map_id: int,
                        layer_id: int,
                        point_id: int,
                        db: typing.Annotated[Session, Depends(get_db)],
                        has_delete: typing.Annotated[bool, Depends(crud.has_layer_delete_permission)]):
+    await websocketManager.point_notification(map_id, layer_id, point_id)
+
     crud.delete_point(db, point_id)
 
 @app.get("/maps/{map_id}/layers/{layer_id}/permissions", response_model=schemas.LayerPermissionSummary)
@@ -257,12 +330,14 @@ def route_get_groups(
     return {"groups": [schemas.GroupSummary(id=g.id, display_name=g.display_name, server_name=g.server_name) for g in groups]}
 
 @app.post("/maps/{map_id}/layers/{layer_id}/permissions", response_model=schemas.LayerPermissionSummary)
-def route_post_permissions(map_id: int,
+async def route_post_permissions(map_id: int,
                            layer_id: int,
                            db: typing.Annotated[Session, Depends(get_db)],
                            new_permissions: schemas.LayerPermissionSummary,
                            has_modify: typing.Annotated[bool, Depends(crud.has_layer_modify_permission)]):
     crud.set_layer_permissions(db, layer_id, new_permissions)
+
+    await websocketManager.layer_notification(map_id, layer_id)
 
     return route_get_permissions(map_id,
                                  layer_id,
