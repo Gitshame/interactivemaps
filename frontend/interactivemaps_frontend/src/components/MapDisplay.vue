@@ -24,7 +24,8 @@
                   :layer_id="layer.id"
                   :map_id="map_id"
                   :apiClient="apiClient"
-                  :canDelete="layer.permissions.delete"/>
+                  :canDelete="layer.permissions.delete"
+                  :canEdit="layer.permissions.modify" />
               </l-popup>
             </l-marker>
           </l-image-overlay>

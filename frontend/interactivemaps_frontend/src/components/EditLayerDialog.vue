@@ -75,7 +75,8 @@ export default defineComponent({
     },
     async handleUpdate() {
       await this.api_client.updateLayer(this.map_id, this.layer_input.id, this.layer_name, this.description, this.map_url, this.priority, this.public)
-      this.handleCancel()
+
+      this.$emit('close')
     }
   }
 });

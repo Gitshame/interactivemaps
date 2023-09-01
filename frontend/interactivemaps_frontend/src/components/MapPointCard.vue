@@ -11,7 +11,22 @@
         label="Delete"
         @click="handleDelete"
         v-if="canDelete"/>
+      <q-btn
+        color="red"
+        rounded
+        icon="delete_forever"
+        label="Edit"
+        @click="editCardVisible=true"
+        v-if="canEdit"/>
     </q-card-actions>
+    <EditPointCard
+      :point="point"
+      :visible="editCardVisible"
+      :api_client="apiClient"
+      :map_id="map_id"
+      :layer_id="layer_id"
+      @close="editCardVisible=false"
+    />
   </div>
 </template>
 
@@ -28,10 +43,12 @@ import { Todo, Meta } from './models';
 import { api } from 'boot/axios';
 import { useInteractiveMapStore, InteractiveMapPoint } from 'stores/map-store'
 import {APIClient} from "assets/js/api_client";
+import EditPointCard from "components/EditPointCard.vue";
 
 
 export default defineComponent({
   name: 'MapPointCard',
+  components: {EditPointCard},
   props: {
     point: {
       type: Object as PropType<InteractiveMapPoint>,
@@ -52,6 +69,10 @@ export default defineComponent({
     canDelete: {
       type: Boolean,
       required: true
+    },
+    canEdit: {
+      type: Boolean,
+      required: true
     }
   },
   setup (props) {
@@ -60,7 +81,9 @@ export default defineComponent({
       props.apiClient.deletePoint(props.map_id, props.layer_id, props.point.id)
     }
 
-    return {handleDelete}
+    const editCardVisible = ref(false)
+
+    return {handleDelete, editCardVisible}
   },
 });
 </script>
